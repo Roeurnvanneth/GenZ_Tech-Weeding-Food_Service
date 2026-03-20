@@ -2,6 +2,9 @@
   "name": "genz_tech",
   "version": "0.1.0",
   "private": true,
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,18 +12,33 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
+    "@tanstack/react-query": "^5.90.21",
+    "cloudinary": "^2.9.0",
+    "clsx": "^2.1.1",
+    "dotenv": "^17.3.1",
+    "jsonwebtoken": "^9.0.3",
     "next": "16.1.7",
+    "pg": "^8.20.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild-register": "^3.6.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.7",
+    "nodemon": "^3.1.14",
+    "prisma": "^7.5.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
