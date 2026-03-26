@@ -1,107 +1,57 @@
-// app/api/products/[id]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// ---------------------------
-// GET PRODUCT BY ID
-// ---------------------------
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+type Props = {
+  params: Promise<{ id: string }>;
+};
+
+// 🟡 GET: Fetch one specific product
+export async function GET(request: Request, { params }: Props) {
   try {
-    const id = parseInt(params.id, 10);
-
+    const { id } = await params; // Next.js 15 fix
     const product = await prisma.product.findUnique({
-      where: { id },
-      include: { category: true },
+      where: { id: Number(id) },
+      include: { category: true }
     });
-
-    if (!product) {
-      return NextResponse.json({ success: false, error: "Product not found" }, { status: 404 });
-    }
-
+    
+    if (!product) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true, data: product });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch product", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Error fetching" }, { status: 500 });
   }
 }
 
-// ---------------------------
-// UPDATE PRODUCT BY ID
-// ---------------------------
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// 🟠 PUT: Update a product
+export async function PUT(request: Request, { params }: Props) {
   try {
-    const id = parseInt(params.id, 10);
+    const { id } = await params;
     const body = await request.json();
-    const { slug, images, price, isPoppular, translations, categoryId } = body;
-
-    // Validate required fields
-    if (!slug || !images || price === undefined || isPoppular === undefined || !translations || !categoryId) {
-      return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
-    }
-
-    // Validate translations
-    if (!translations.kh || !translations.en) {
-      return NextResponse.json({ success: false, error: "Translations must include 'kh' and 'en'" }, { status: 400 });
-    }
-
-    for (const [lang, t] of Object.entries(translations)) {
-      if (!translations.name || !translations.description) {
-        return NextResponse.json({ success: false, error: `Translation for '${lang}' must include 'name' and 'description'` }, { status: 400 });
-      }
-    }
-
-    const existingProduct = await prisma.product.findUnique({ where: { id } });
-    if (!existingProduct) return NextResponse.json({ success: false, error: "Product not found" }, { status: 404 });
-
-    const updatedProduct = await prisma.product.update({
-      where: { id },
+    
+    const updated = await prisma.product.update({
+      where: { id: Number(id) },
       data: {
-        slug,
-        images,
-        price: parseFloat(price),
-        isPoppular: Boolean(isPoppular),
-        translations,
-        categoryId,
+        slug: body.slug,
+        price: body.price ? Number(body.price) : undefined,
+        videoUrl: body.videoUrl,
+        categoryId: body.categoryId ? Number(body.categoryId) : undefined,
+        images: body.imges ? [body.imges] : undefined,
+        translations: body.translations,
       },
     });
-
-    return NextResponse.json({ success: true, message: "Product updated", data: updatedProduct });
+    
+    return NextResponse.json({ success: true, message: "Updated!", data: updated });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: "Failed to update product", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Update failed" }, { status: 500 });
   }
 }
 
-// ---------------------------
-// DELETE PRODUCT BY ID
-// ---------------------------
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// 🔴 DELETE: Remove a product
+export async function DELETE(request: Request, { params }: Props) {
   try {
-    const id = parseInt(params.id, 10);
-
-    const existingProduct = await prisma.product.findUnique({ where: { id } });
-    if (!existingProduct) return NextResponse.json({ success: false, error: "Product not found" }, { status: 404 });
-
-    await prisma.product.delete({ where: { id } });
-
-    return NextResponse.json({ success: true, message: "Product deleted", deletedProduct: existingProduct });
+    const { id } = await params;
+    await prisma.product.delete({ where: { id: Number(id) } });
+    return NextResponse.json({ success: true, message: "Deleted successfully" });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: "Failed to delete product", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Delete failed" }, { status: 500 });
   }
 }

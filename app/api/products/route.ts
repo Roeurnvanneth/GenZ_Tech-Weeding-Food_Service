@@ -1,59 +1,42 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // Importing the database client
+import { prisma } from "@/lib/prisma";
 
-/**
- * GET: Fetch a single product by its ID
- */
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+// 🟢 POST: Create a new product (using JSON)
+export async function POST(request: Request) {
   try {
-    const product = await prisma.product.findUnique({
-      // We convert params.id from a string to a Number because databases usually use numeric IDs
-      where: { id: Number(params.id) },
-      // "include" acts like a SQL JOIN, fetching the category details linked to this product
-      include: { category: true }
-    });
-    
-    return NextResponse.json({ success: true, data: product });
-  } catch (error) {
-    // If the ID doesn't exist or the DB is down, return a 404
-    return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
-  }
-}
+    const body = await request.json();
+    const { slug, imges, categoryId, price, translations } = body;
 
-/**
- * PUT: Update an existing product's information
- */
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  try {
-    const data = await request.json(); // Get the new data from the request body
-    
-    const updated = await prisma.product.update({
-      where: { id: Number(params.id) },
+    if (!slug || !categoryId || price === undefined) {
+      return NextResponse.json({ success: false, error: "Missing fields" }, { status: 400 });
+    }
+
+    const newProduct = await prisma.product.create({
       data: {
-        ...data, // Spread the other fields (like name or description)
-        // Ensure price and categoryId are Numbers, even if sent as strings from a form
-        price: data.price ? Number(data.price) : undefined,
-        categoryId: data.categoryId ? Number(data.categoryId) : undefined,
+        slug,
+        price: Number(price),
+        categoryId: Number(categoryId),
+        images: imges ? [imges] : [], // Saves URL into an array
+        translations: translations || {},
+        isPoppular: false,
       },
     });
-    
-    return NextResponse.json({ success: true, data: updated });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Update failed" }, { status: 500 });
+
+    return NextResponse.json({ success: true, data: newProduct }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
-/**
- * DELETE: Remove the product from the database
- */
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+// 🔵 GET: List all products
+export async function GET() {
   try {
-    await prisma.product.delete({ 
-      where: { id: Number(params.id) } 
+    const products = await prisma.product.findMany({
+      include: { category: true },
+      orderBy: { id: 'desc' }
     });
-    
-    return NextResponse.json({ success: true, message: "Product deleted" });
+    return NextResponse.json({ success: true, data: products });
   } catch (error) {
-    return NextResponse.json({ success: false, error: "Delete failed" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Fetch failed" }, { status: 500 });
   }
 }
