@@ -8,17 +8,31 @@ datasource db {
 }
 
 model User {
-  id           Int     @id @default(autoincrement())
-  name         String?
-  phone        String  @unique
-  role         String  @default("USER")
-  refreshToken String?
+  id            Int       @id @default(autoincrement())
+  name          String?
+  phone         String    @unique
+  role          Role      @default(USER)
+
+  otpCode       String?
+  otpExpiry     DateTime?
+
+  refreshToken  String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
+
+enum Role {
+  ADMIN
+  USER
+}
+
 
 
 model Category {
   id           Int    @id @default(autoincrement())
   slug         String  @unique
+  isPoppular    Boolean @default(false)
   translations Json
   createdAt    DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -27,12 +41,51 @@ model Category {
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  slug        String   @unique  // <--- ADD THIS LINE
+  id           Int      @id @default(autoincrement())
+  slug         String   @unique
+  price        Float
+  isPoppular    Boolean  @default(false)
+  videoUrl     String?   // Added for the Product Detail video
   images      String[] // or Json, depending on your setup
-  price       Float
-  isPoppular  Boolean  @default(false)
-  translations Json
-  categoryId  Int
-  category    Category @relation(fields: [categoryId], references: [id])
+  translations Json     // Make sure this is 'Json' and matches your POST body
+  categoryId   Int
+  category     Category @relation(fields: [categoryId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
 }
+
+
+model TeamMember {
+  id           Int      @id @default(autoincrement())
+  slug         String       @unique
+  image        String       // Image URL for the team member photo
+  translations Json         // { en: { name, role }, km: { name, role } }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model Booking {
+  id              Int      @id @default(autoincrement())
+  customerName    String
+  phoneNumber     String
+  programType     String   
+  programDate     String   
+  // ADD THESE MISSING FIELDS BELOW:
+  programTime     String?   // Added
+  startDateTime   String?   // Added
+  endDateTime     String?   // Added
+  contactMethod   String?   // Added
+  translations Json       // { kh: { name }, en: { name } }
+  // -------------------------
+  location        String
+  guestCount      Int      
+  hasFood         Boolean  @default(false)
+  hasTent         Boolean  @default(false)
+  totalPrice      Float    
+  serviceType     String   
+  status          String   @default("Pending")
+  createdAt       DateTime @default(now())
+}
+
