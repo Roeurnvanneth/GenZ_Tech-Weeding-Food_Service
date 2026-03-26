@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+
 // 🔍 SHARED VALIDATOR
 function validateTranslations(translations: any) {
   if (!translations || typeof translations !== "object") return "Translations must be an object";
