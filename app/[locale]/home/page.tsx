@@ -3,13 +3,34 @@
 import { useState } from 'react';
 import { Utensils, Calendar, MapPin, Phone, Send } from 'lucide-react';
 import Link from 'next/link';
-import Header from '../../components/page'; // Make sure path is correct
+import Header from '../../components/header'; // Make sure path is correct
 import { messages, Language } from '../../i18n/messages';
+import FoodGallery from '@/app/components/card';
 
 export default function HomePage() {
   const [lang, setLang] = useState<Language>('kh');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const t = messages[lang];
+
+  //2.Perpare image
+const catering = [
+    {
+      src: "/bd.jpg",
+      label: t.birthday,
+      href: "/services/birthday"
+    },
+    {
+        src: "/Festive.webp",
+        label: t.ceremony,
+        href: "/services/festive"
+    },
+    {
+      src: "/wedding.jpg",
+      label: t.wedding,
+      href: "/services/wedding"
+},
+  
+]
 
   const toggleLang = () => setLang(lang === 'en' ? 'kh' : 'en');
 
@@ -69,17 +90,17 @@ export default function HomePage() {
     
     {/* Optional: Small Gold Divider line under the heading */}
 </section>
-            {/* --- Features Section --- */}
-            <section className="py-20 bg-[#2d1212]">
-            <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 text-center">
-            <div className="flex flex-col items-center gap-4">
+          {/* --- Features Section --- */}
+      <section className="py-20 bg-[#2d1212]">
+        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 text-center">
+          <div className="flex flex-col items-center gap-4">
             <Utensils className="w-16 h-16 text-[#B99808]" />
-            <h3 className="text-2xl font-bold text-[#B99808]">{t.Professionalchef}</h3>
+            <h3 className="text-2xl font-bold text-[#B99808]">{t.professionalchef}</h3>
             <p className="text-gray-400 max-w-sm">{t.experince}</p>
             </div>
             <div className="flex flex-col items-center gap-4">
             <Calendar className="w-16 h-16 text-[#B99808]" />
-            <h3 className="text-2xl font-bold text-[#B99808]">{t.Prepareallprograms}</h3>
+            <h3 className="text-2xl font-bold text-[#B99808]">{t.prepareallprograms}</h3>
             <p className="text-gray-400 max-w-sm">{t.event}</p>
             </div>
             </div>
@@ -117,7 +138,15 @@ export default function HomePage() {
             </div>
         </section>
 
-
+      {/*Catering service */}
+      <section className="py-20 bg-[#2d1212] flex flex-col items-center justify-center text-center px-6">
+    {/* Title */}
+    <h1 className="text-3xl md:text-3xl text-4xl font-bold text-[#B99808] mb-4">
+      {t.cateringservice}
+    </h1>
+     {/*Insert component image */}
+        <FoodGallery images={catering} />
+</section>
       {/* --- Footer --- */}
       <footer className="py-20 px-6 bg-[#2d1212]">
         <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-16">
@@ -138,9 +167,9 @@ export default function HomePage() {
           </div>
 
           <div className="space-y-4 text-sm text-gray-400">
-             <h4 className="text-lg font-bold text-[#B99808] uppercase tracking-widest">{lang === 'en' ? 'Contact' : 'ទំនាក់ទំនង'}</h4>
-             <p className="flex items-center gap-3"><MapPin size={18} className="text-[#B99808]" /> {t.location}</p>
-             <p className="flex items-center gap-3"><Phone size={18} className="text-[#B99808]" /> 096 793 2352</p>
+            <h4 className="text-lg font-bold text-[#B99808] uppercase tracking-widest">{lang === 'en' ? 'Contact' : 'ទំនាក់ទំនង'}</h4>
+            <p className="flex items-center gap-3"><MapPin size={18} className="text-[#B99808]" /> {t.location}</p>
+            <p className="flex items-center gap-3"><Phone size={18} className="text-[#B99808]" /> 096 793 2352</p>
           </div>
         </div>
       </footer>
