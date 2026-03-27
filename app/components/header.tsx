@@ -22,9 +22,9 @@ export default function Header({ lang, toggleLang, isMenuOpen, setIsMenuOpen }: 
         {/* --- LOGO --- */}
         <div className="flex-1 flex items-center">
           <Link href="/">
-            <img 
-              src="/logo.jpg" 
-              alt="Logo" 
+            <img
+              src="/logo.jpg"
+              alt="Logo"
               className="h-12 w-12 rounded-full object-cover border border-gray-100" 
             />
           </Link>
@@ -77,7 +77,7 @@ export default function Header({ lang, toggleLang, isMenuOpen, setIsMenuOpen }: 
           </div>
            <div className="flex flex-col gap-4">
             <Link href="login" className="w-full">
-          <button onClick={() => setIsMenuOpen(false)} className="w-50 h-50flex items-center justify-center gap-2 text-black font-bold py-3 border border-[#B99808] hover:bg-[#B99808] hover:text-white rounded-xl">
+          <button onClick={() => setIsMenuOpen(false)} className="w-30 h-10 flex items-center justify-center gap-2 text-black font-bold py-3 border border-[#B99808] hover:bg-[#B99808] hover:text-white rounded-xl">
               {t.button}
             </button>
             </Link>
