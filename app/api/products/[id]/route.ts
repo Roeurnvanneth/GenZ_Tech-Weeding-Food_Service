@@ -1,27 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type Props = {
-  params: Promise<{ id: string }>;
-};
+type Props = { params: Promise<{ id: string }> };
 
-// 🟡 GET: Fetch one specific product
-export async function GET(request: Request, { params }: Props) {
-  try {
-    const { id } = await params; // Next.js 15 fix
-    const product = await prisma.product.findUnique({
-      where: { id: Number(id) },
-      include: { category: true }
-    });
-    
-    if (!product) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
-    return NextResponse.json({ success: true, data: product });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Error fetching" }, { status: 500 });
-  }
-}
-
-// 🟠 PUT: Update a product
+// 🟠 PUT: កែប្រែព័ត៌មានផលិតផល
 export async function PUT(request: Request, { params }: Props) {
   try {
     const { id } = await params;
@@ -31,27 +13,34 @@ export async function PUT(request: Request, { params }: Props) {
       where: { id: Number(id) },
       data: {
         slug: body.slug,
-        price: body.price ? Number(body.price) : undefined,
+        maxPrice: Number(body.maxPrice),
+        hallPrice: Number(body.hallPrice) || 0,
         videoUrl: body.videoUrl,
-        categoryId: body.categoryId ? Number(body.categoryId) : undefined,
-        images: body.imges ? [body.imges] : undefined,
+        categoryId: Number(body.categoryId),
+        images: body.images, // បញ្ជូនជា Array ថ្មី
         translations: body.translations,
+        isPoppular: body.isPoppular,
       },
     });
     
-    return NextResponse.json({ success: true, message: "Updated!", data: updated });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Update failed" }, { status: 500 });
+    return NextResponse.json({ success: true, message: "កែប្រែបានជោគជ័យ!", data: updated });
+  } catch (error: any) {
+    console.error("Update Error:", error.message);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
-// 🔴 DELETE: Remove a product
+// 🔴 DELETE: លុបផលិតផល
 export async function DELETE(request: Request, { params }: Props) {
   try {
     const { id } = await params;
-    await prisma.product.delete({ where: { id: Number(id) } });
-    return NextResponse.json({ success: true, message: "Deleted successfully" });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Delete failed" }, { status: 500 });
+    
+    await prisma.product.delete({
+      where: { id: Number(id) },
+    });
+    
+    return NextResponse.json({ success: true, message: "លុបផលិតផលបានជោគជ័យ!" });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: "មិនអាចលុបបានទេ!" }, { status: 500 });
   }
 }

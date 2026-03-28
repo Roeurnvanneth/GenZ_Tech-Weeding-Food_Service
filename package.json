@@ -16,6 +16,7 @@
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "@tanstack/react-query": "^5.90.21",
+    "browser-image-compression": "^2.0.2",
     "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.3.1",
@@ -26,6 +27,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.72.0",
+    "recharts": "^3.8.1",
     "tailwind-merge": "^3.5.0",
     "twilio": "^5.13.1",
     "zod": "^4.3.6"
