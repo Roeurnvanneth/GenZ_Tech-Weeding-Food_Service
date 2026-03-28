@@ -1,72 +1,178 @@
 "use client";
 
-import { Utensils, CalendarCheck, Users, TrendingUp } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { 
+  CalendarCheck, Users, TrendingUp, 
+  Loader2, Clock, MapPin 
+} from "lucide-react";
+import {
+  PieChart, Pie, Cell, ResponsiveContainer,
+  LineChart, Line, XAxis, Tooltip,
+  CartesianGrid
+} from 'recharts';
 
 export default function DashboardPage() {
-  // Mock data for your Wedding Service
-  const stats = [
-    { title: "Total Bookings", value: "24", icon: <CalendarCheck className="text-blue-600" />, bg: "bg-blue-50" },
-    { title: "Active Menus", value: "8", icon: <Utensils className="text-orange-600" />, bg: "bg-orange-50" },
-    { title: "Total Customers", value: "152", icon: <Users className="text-green-600" />, bg: "bg-green-50" },
-    { title: "Revenue (MTD)", value: "$12,450", icon: <TrendingUp className="text-purple-600" />, bg: "bg-purple-50" },
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/booking");
+      const json = await res.json();
+      const list = Array.isArray(json) ? json : json.data || [];
+      setBookings(list);
+    } catch (err) {
+      console.error("Dashboard Load Error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchDashboardData(); }, []);
+
+  // --- Logic Calculations ---
+  const totalBookings = bookings.length;
+  const pendingCount = bookings.filter(b => b.status === "Pending").length;
+  const acceptedCount = bookings.filter(b => b.status === "Accepted").length;
+  const rejectedCount = bookings.filter(b => b.status === "Rejected").length;
+  
+  const totalRevenue = bookings
+    .filter(b => b.status === "Accepted")
+    .reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
+
+  // បូកសរុបចំនួនភ្ញៀវទាំងអស់ (មិនមែនចំនួន User ទេ)
+  const totalGuestsSum = bookings.reduce((sum, b) => sum + (Number(b.guestCount) || 0), 0);
+
+  const pieData = [
+    { name: 'Accepted', value: acceptedCount, color: '#10b981' },
+    { name: 'Pending', value: pendingCount, color: '#f59e0b' },
+    { name: 'Rejected', value: rejectedCount, color: '#ef4444' },
   ];
 
-  const recentBookings = [
-    { id: "BK-001", customer: "Sok Rathana", date: "April 12, 2026", tables: 50, status: "Confirmed" },
-    { id: "BK-002", customer: "Keo Pisey", date: "May 05, 2026", tables: 80, status: "Pending" },
-    { id: "BK-003", customer: "Chan Tola", date: "June 20, 2026", tables: 35, status: "Confirmed" },
+  const stats = [
+    { title: "ការកក់សរុប", value: totalBookings, Icon: CalendarCheck, bg: "bg-blue-100", text: "text-blue-700" },
+    { title: "រង់ចាំពិនិត្យ", value: pendingCount, Icon: Clock, bg: "bg-amber-100", text: "text-amber-700" },
+    { title: "ភ្ញៀវសរុប", value: totalGuestsSum, Icon: Users, bg: "bg-emerald-100", text: "text-emerald-700" },
+    { title: "ចំណូលសរុប", value: `$${totalRevenue.toLocaleString()}`, Icon: TrendingUp, bg: "bg-purple-100", text: "text-purple-700" },
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Catering Overview</h1>
-        <p className="text-slate-500">Welcome back, Chef! Here is what's happening with your wedding services.</p>
+    <div className="space-y-10 p-8 bg-slate-50 font-khmer min-h-screen">
+      {/* Header */}
+      <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+        <div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">ទិដ្ឋភាពទូទៅ (Admin Overview)</h1>
+          <p className="text-lg text-slate-500 font-medium mt-1">គ្រប់គ្រង និងតាមដានទិន្នន័យការកក់របស់អ្នក</p>
+        </div>
+        <button onClick={fetchDashboardData} className="p-4 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-800 transition-all active:scale-95">
+          <Loader2 className={`${isLoading ? "animate-spin" : ""} `} size={28} />
+        </button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-md border border-slate-100">
+          <h3 className="text-xl font-bold text-slate-700 mb-6">ស្ថានភាពការកក់</h3>
+          <div className="h-72 relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={pieData} innerRadius={70} outerRadius={100} paddingAngle={8} dataKey="value">
+                  {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-4xl font-black text-slate-900">{totalBookings}</span>
+              <span className="text-sm text-slate-400 font-bold uppercase tracking-widest">សរុប</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-md border border-slate-100 lg:col-span-2">
+          <h3 className="text-xl font-bold text-slate-700 mb-6">និន្នាការចំណូល</h3>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={bookings.slice(-10)}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="programDate" tick={{fontSize: 12, fontWeight: 600}} dy={10} />
+                <Tooltip />
+                <Line type="monotone" dataKey="totalPrice" stroke="#3b82f6" strokeWidth={4} dot={{ r: 6, fill: '#3b82f6' }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards - Large & Clear */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-            <div className={`p-3 rounded-xl ${stat.bg}`}>{stat.icon}</div>
+          <div key={index} className="bg-white p-8 rounded-[2.5rem] shadow-md border border-slate-100 flex items-center gap-6 transition-transform hover:-translate-y-1">
+            <div className={`p-5 rounded-3xl ${stat.bg} ${stat.text}`}>
+              <stat.Icon size={36} strokeWidth={2.5} />
+            </div>
             <div>
-              <p className="text-sm text-slate-500 font-medium">{stat.title}</p>
-              <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
+              <p className="text-sm font-black text-blue-600 uppercase tracking-widest mb-1">{stat.title}</p>
+              <p className="text-4xl font-black text-slate-900 tracking-tight">{stat.value}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Recent Bookings Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-          <h2 className="font-bold text-slate-800">Recent Wedding Bookings</h2>
-          <button className="text-sm font-bold text-[#B48C00] hover:underline">View All</button>
+      {/* Table Section - Improved Readability */}
+      <div className="bg-white rounded-[3rem] shadow-xl border border-slate-200 overflow-hidden">
+        <div className="p-10 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h2 className="text-2xl font-black text-slate-800">បញ្ជីការកក់ចុងក្រោយ</h2>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 bg-emerald-500 rounded-full animate-ping"></span>
+            <span className="text-sm font-black text-emerald-600 uppercase tracking-widest">ទិន្នន័យបច្ចុប្បន្ន</span>
+          </div>
         </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
-              <tr>
-                <th className="px-6 py-4">Booking ID</th>
-                <th className="px-6 py-4">Customer</th>
-                <th className="px-6 py-4">Event Date</th>
-                <th className="px-6 py-4">Tables</th>
-                <th className="px-6 py-4">Status</th>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 text-slate-500 text-xs font-black uppercase tracking-[0.2em] border-b border-slate-200">
+                <th className="px-10 py-6 text-center">អតិថិជន</th>
+                <th className="px-10 py-6 text-center">កាលបរិច្ឆេទ</th>
+                <th className="px-10 py-6 text-center">ចំនួននាក់ & តុ</th>
+                <th className="px-10 py-6 text-center">តម្លៃសរុប</th>
+                <th className="px-10 py-6 text-center">ស្ថានភាព</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {recentBookings.map((booking) => (
-                <tr key={booking.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-700">{booking.id}</td>
-                  <td className="px-6 py-4 text-slate-600">{booking.customer}</td>
-                  <td className="px-6 py-4 text-slate-600">{booking.date}</td>
-                  <td className="px-6 py-4 text-slate-600">{booking.tables} Tables</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      booking.status === "Confirmed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+              {bookings.slice(0, 8).map((b) => (
+                <tr key={b.id} className="hover:bg-blue-50/30 transition-colors group">
+                  <td className="px-10 py-8">
+                    <div className="font-black text-slate-900 text-lg group-hover:text-blue-600 transition-colors">{b.customerName}</div>
+                    <div className="text-sm text-slate-400 font-bold mt-1 tracking-wider">{b.phoneNumber}</div>
+                  </td>
+                  <td className="px-10 py-8 text-center font-bold text-slate-600">
+                    <div className="flex items-center justify-center gap-2 bg-slate-100 py-2 px-4 rounded-xl text-base">
+                      <CalendarCheck size={18} className="text-amber-500"/> {b.programDate}
+                    </div>
+                  </td>
+                  <td className="px-10 py-8 text-center">
+                    <div className="font-black text-slate-900 text-2xl leading-none">
+                      {Math.ceil((b.guestCount || 0) / 10)} តុ
+                    </div>
+                    <div className="text-xs text-slate-400 font-black mt-2 uppercase tracking-widest bg-slate-50 inline-block px-3 py-1 rounded-md">
+                      {b.guestCount || 0} នាក់
+                    </div>
+                  </td>
+                  <td className="px-10 py-8 text-center">
+                    <div className="font-black text-emerald-600 text-2xl tracking-tighter">
+                      ${Number(b.totalPrice).toLocaleString()}
+                    </div>
+                  </td>
+                  <td className="px-10 py-8 text-center">
+                    <span className={`inline-block px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest border-2 shadow-sm ${
+                      b.status === "Accepted" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
+                      b.status === "Rejected" ? "bg-rose-50 text-rose-700 border-rose-200" :
+                      "bg-amber-50 text-amber-700 border-amber-200"
                     }`}>
-                      {booking.status}
+                      {b.status}
                     </span>
                   </td>
                 </tr>

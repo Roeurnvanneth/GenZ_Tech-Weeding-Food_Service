@@ -55,7 +55,7 @@ export default function Navbar() {
               <User size={20} />
             </div>
             <div className="text-left hidden md:block">
-              <p className="text-xs font-bold text-slate-800 leading-none">Admin Sopheap</p>
+              <p className="text-xs font-bold text-slate-800 leading-none">Sokche Theavy Sopheap</p>
               <p className="text-[10px] text-slate-400 mt-1">Super Admin</p>
             </div>
             <ChevronDown size={14} className={`text-slate-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
@@ -64,7 +64,7 @@ export default function Navbar() {
           {isProfileOpen && (
             <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 animate-in fade-in zoom-in duration-150">
               <div className="px-4 py-3 border-b border-slate-50">
-                <p className="text-sm font-bold text-slate-800">Sopheap Admin</p>
+                <p className="text-sm font-bold text-slate-800">Sokche Theavy Admin</p>
                 <p className="text-[11px] text-slate-500">admin@genztech.com</p>
               </div>
               <div className="p-2 space-y-1">

@@ -28,14 +28,13 @@ export default function Sidebar() {
     { name: "Categories", icon: <Tags size={20} />, href: `/${locale}/dashboard/categories` },
     { name: "Products", icon: <ChefHat size={20} />, href: `/${locale}/dashboard/products` },
     { name: "Teams", icon: <Users size={20} />, href: `/${locale}/dashboard/teams` },
-    { name: "Customers", icon: <UserSquare2 size={20} />, href: `/${locale}/dashboard/customers` },
   ];
 
   return (
     <aside className="w-64 bg-slate-900 text-white h-screen flex flex-col shrink-0 border-r border-slate-800 sticky top-0">
       <div className="p-8">
         <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
-          GenZ Tech
+          ចុងភៅសុខជា ធាវី
         </h1>
         <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Wedding Catering</p>
       </div>
