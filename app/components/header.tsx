@@ -40,9 +40,9 @@ export default function Header({ lang, toggleLang, isMenuOpen, setIsMenuOpen, us
 
         {/* --- MENU (Center) --- */}
         <nav className="hidden md:flex flex-[2] justify-center items-center gap-10 text-[#B99808] font-bold">
-          {t?.nav?.map((item: string, index: number) => (
-            <a key={index} href={`#${index}`} className="hover:text-black transition-colors whitespace-nowrap uppercase text-sm tracking-wide">
-              {item}
+          {t?.nav?.map((item: { label: string; path: string }, index: number) => (
+            <a key={index} href={item.path} className="hover:text-black transition-colors whitespace-nowrap uppercase text-sm tracking-wide">
+              {item.label}
             </a>
           ))}
         </nav>
@@ -112,14 +112,14 @@ export default function Header({ lang, toggleLang, isMenuOpen, setIsMenuOpen, us
             </div>
           )}
 
-          {t?.nav?.map((item: string, index: number) => (
+          {t?.nav?.map((item: { label: string; path: string }, index: number) => (
             <a 
               key={index} 
-              href="#" 
+              href={item.path} 
               className={`text-[#B99808] font-bold text-xl border-b pb-3 border-gray-50 ${lang === 'kh' ? 'font-khmer' : ''}`} 
               onClick={() => setIsMenuOpen(false)}
             >
-              {item}
+              {item.label}
             </a>
           ))}
          

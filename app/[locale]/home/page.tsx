@@ -171,7 +171,7 @@ export default function HomePage() {
           <div className="space-y-4">
             <h4 className="text-lg font-bold text-[#B99808] uppercase tracking-widest">{lang === 'en' ? 'Links' : 'តំណភ្ជាប់'}</h4>
             <div className="flex flex-col gap-2">
-              {t?.nav?.map((item: string) => <a key={item} href="#" className="text-gray-400 hover:text-white">{item}</a>)}
+              {t?.nav?.map((item: { label: string; path: string }) => <a key={item.label} href={item.path} className="text-gray-400 hover:text-white">{item.label}</a>)}
             </div>
           </div>
 
