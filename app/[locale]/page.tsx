@@ -1,13 +1,12 @@
 "use client";
 
-import React from 'react';
+import React from "react";
+import HomePageContent from "./home/page"; 
 
-// Make sure it says 'export default function'
-export default function Header() {
+export default function Home() {
   return (
-    <div>
-      <img src="/logo.jpg" alt="Logo" />
-      <h1>Hello</h1>
-    </div>
+    <main>
+      <HomePageContent />
+    </main>
   );
 }

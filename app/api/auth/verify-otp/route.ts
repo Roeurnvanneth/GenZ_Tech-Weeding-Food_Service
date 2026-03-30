@@ -1,41 +1,40 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import jwt from "jsonwebtoken";
 
 export async function POST(req: Request) {
   try {
-    // 1. Get body
-    const body = await req.json();
-    const { phone, otp } = body;
+    const { phone, otp, name } = await req.json();
 
-    // 2. Validate input
-    if (!phone || !otp) {
-      return NextResponse.json(
-        { error: "Phone and OTP required" },
-        { status: 400 }
-      );
-    }
+    // 1. Define your Admin Number
+    const ADMIN_PHONE = "012345678"; 
 
-    // 3. TODO: Verify OTP (compare with DB or in-memory store)
-    // const validOtp = await prisma.otp.findUnique({ where: { phone } });
-    // if (!validOtp || validOtp.otp !== otp) {
-    //   return NextResponse.json({ error: "Invalid OTP" }, { status: 401 });
-    // }
-
-    // 4. For testing, we assume OTP is always valid
-
-    // 5. Return success
-    return NextResponse.json({
-      message: "OTP verified successfully",
-      phone,
+    // 2. Upsert User
+    const user = await prisma.user.upsert({
+      where: { phone: phone },
+      update: { role: phone === ADMIN_PHONE ? "ADMIN" : undefined },
+      create: {
+        phone: phone,
+        name: name || "Customer",
+        role: phone === ADMIN_PHONE ? "ADMIN" : "USER",
+      },
     });
 
-  } catch (error) { 
-    console.error(error);
-    return NextResponse.json(
-      { error: "Server error" },
-      { status: 500 }
-    );
+    const response = NextResponse.json({
+      success: true,
+      role: user.role,
+      user
+    });
+
+    // 3. CRITICAL: Set the role in a Cookie so Middleware can see it
+    response.cookies.set("user_role", user.role, {
+      httpOnly: false, // Set to false so frontend can also read it if needed
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+    });
+
+    return response;
+  } catch (error) {
+    return NextResponse.json({ success: false, error: "Server Error" }, { status: 500 });
   }
 }
- 
-
-
