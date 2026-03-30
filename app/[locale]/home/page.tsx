@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Utensils, Calendar, MapPin, Phone, Send } from 'lucide-react';
 import Link from 'next/link';
 import Header from '../../components/header'; // Ensure this path is correct
@@ -10,6 +10,22 @@ import FoodGallery from '@/app/components/card';
 export default function HomePage() {
   const [lang, setLang] = useState<Language>('kh');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // --- បន្ថែម State សម្រាប់រក្សាទុកទិន្នន័យ User ---
+  const [user, setUser] = useState<{ name: string } | null>(null);
+
+  // --- ប្រើ useEffect ដើម្បីទាញទិន្នន័យពី LocalStorage ពេលបើក Page ---
+  useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error("Error parsing user data", error);
+      }
+    }
+  }, []);
+
   const t = messages[lang];
 
   // Prepare catering images with dynamic language links
@@ -36,12 +52,13 @@ export default function HomePage() {
   return (
     <div className={`min-h-screen bg-[#3d1a1a] text-white ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
       
-      {/* 1. HEADER WITH DYNAMIC LOGIN BUTTON */}
+      {/* 1. HEADER WITH DYNAMIC PROFILE/LOGIN */}
       <Header
         lang={lang}
         toggleLang={toggleLang}
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
+        user={user} // បោះ user ទៅឱ្យ Header ដើម្បីបង្ហាញ Profile
       />
 
       {/* --- Hero Section --- */}

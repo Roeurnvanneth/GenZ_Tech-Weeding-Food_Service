@@ -3,19 +3,21 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { loginSchema, LoginFormValues } from "./validation";
+import { useRouter, useParams } from "next/navigation";
+import { loginSchema, LoginFormValues } from "./validation"; // ប្រាកដថាអ្នកមាន File validation នេះ
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const router = useRouter();
+  const params = useParams();
+  const locale = params.lang || "kh"; // ទាញយកភាសាពី URL params
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   });
 
-  // --- មុខងារផ្ញើ OTP ទៅ Backend ---
+  // --- មុខងារផ្ញើ OTP និងបញ្ជូន Name ទៅទំព័របន្ទាប់ ---
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     setServerError("");
@@ -33,11 +35,13 @@ export default function LoginPage() {
       const result = await response.json();
 
       if (response.ok) {
-        // ចាប់យក debugOtp ដូចក្នុង Postman result របស់អ្នក
+        // ចាប់យក debugOtp បើមាន (សម្រាប់ Dev mode)
         const otpCode = result.debugOtp ? `&code=${result.debugOtp}` : "";
         
-        // បញ្ជូនទៅទំព័រ Verify ជាមួយ Phone និង Code (សម្រាប់ Auto-fill)
-        router.push(`/auth/verify-otp?phone=${encodeURIComponent(data.phone)}${otpCode}`);
+        /* សំខាន់៖ យើងបញ្ជូន name ទៅជាមួយ URL ដើម្បីឱ្យទំព័រ Verify 
+           អាចយកឈ្មោះនោះទៅរក្សាទុកក្នុង localStorage ពេល Login ជោគជ័យ
+        */
+        router.push(`/${locale}/customer-verify-otp?phone=${encodeURIComponent(data.phone)}&name=${encodeURIComponent(data.name)}${otpCode}`);
       } else {
         setServerError(result.error || "ការផ្ញើលេខកូដបរាជ័យ។ សូមព្យាយាមម្តងទៀត។");
       }
@@ -49,7 +53,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 md:bg-slate-100 font-sans">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 md:bg-slate-100 font-sans text-black">
       <div className="flex w-full max-w-5xl flex-col overflow-hidden bg-white shadow-2xl md:flex-row md:rounded-[2rem] md:m-4 min-h-screen md:min-h-[600px]">
         
         {/* ផ្នែកខាងស្តាំ - រូបភាព (បង្ហាញខាងលើនៅពេលប្រើទូរស័ព្ទ) */}
@@ -67,7 +71,9 @@ export default function LoginPage() {
         <div className="flex w-full flex-col justify-start px-8 py-10 md:w-1/2 md:justify-center md:p-16 md:order-1">
           <div className="mb-8">
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">សូមស្វាគមន៍</h2>
-            <p className="mt-2 text-slate-500 font-medium">បញ្ចូលព័ត៌មានដើម្បីទទួលលេខកូដ OTP</p>
+            <p className="mt-2 text-slate-500 font-medium italic">
+              {locale === 'kh' ? 'បញ្ចូលព័ត៌មានដើម្បីទទួលលេខកូដ OTP' : 'Enter details to receive OTP code'}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -96,7 +102,7 @@ export default function LoginPage() {
 
             {/* បង្ហាញ Error ពី Server */}
             {serverError && (
-              <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm font-bold text-center animate-pulse">
+              <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm font-bold text-center animate-shake">
                 {serverError}
               </div>
             )}
@@ -109,19 +115,16 @@ export default function LoginPage() {
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
-                   <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                   </svg>
+                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                    កំពុងផ្ញើ...
                 </span>
-              ) : "បន្ទាប់"}
+              ) : (locale === 'kh' ? 'បន្ទាប់' : 'Next')}
             </button>
           </form>
 
           <div className="mt-10 border-t border-slate-100 pt-6">
             <p className="text-center text-xs text-slate-400">
-              © 2026 <span className="font-bold text-slate-500">GenZ Tech</span>. រក្សាសិទ្ធិគ្រប់យ៉ាង។
+              © 2026 <span className="font-bold text-slate-500">GenZ Catering</span>. រក្សាសិទ្ធិគ្រប់យ៉ាង។
             </p>
           </div>
         </div>
