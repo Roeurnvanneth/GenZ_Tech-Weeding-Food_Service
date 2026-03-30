@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Utensils, Calendar, MapPin, Phone, Send } from 'lucide-react';
-import Link from 'next/link';
 import Header from '../../components/header'; // Make sure path is correct
 import { messages, Language } from '../../i18n/messages';
 import FoodGallery from '@/app/components/card';

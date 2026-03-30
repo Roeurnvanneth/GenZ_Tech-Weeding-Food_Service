@@ -21,11 +21,11 @@ export default function Header({ lang, toggleLang, isMenuOpen, setIsMenuOpen }: 
         
         {/* --- LOGO --- */}
         <div className="flex-1 flex items-center">
-          <Link href="/">
+          <Link href="/kh/home">
             <img
               src="/logo.jpg"
               alt="Logo"
-              className="h-12 w-12 rounded-full object-cover border border-gray-100" 
+              className="h-12 w-12 rounded-full object-cover border border-gray-100"
             />
           </Link>
         </div>
@@ -65,17 +65,16 @@ export default function Header({ lang, toggleLang, isMenuOpen, setIsMenuOpen }: 
       {isMenuOpen && (
         <div className="absolute top-20 left-0 w-full bg-white shadow-2xl md:hidden flex flex-col p-8 gap-6 border-t">
           {t?.nav?.map((item: string, index: number) => (
-            <a key={index} href="#" className="text-[#B99808] font-bold text-xl border-b pb-3" onClick={() => setIsMenuOpen(false)}>
+            <a key={index} href="#" className="text-[#B99808] hover:text-black font-bold text-xl border-b pb-3" onClick={() => setIsMenuOpen(false)}>
               {item}
             </a>
           ))}
-         
           <div className="flex flex-col gap-4">
             <button onClick={toggleLang} className="flex items-center justify-center gap-2 text-gray-600 font-bold py-3 bg-gray-50 hover:text-[#B99808] rounded-xl">
               <Globe size={20} /> {lang === 'en' ? 'ភាសាខ្មែរ' : 'English'}
             </button>
           </div>
-           <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4">
             <Link href="login" className="w-full">
           <button onClick={() => setIsMenuOpen(false)} className="w-30 h-10 flex items-center justify-center gap-2 text-black font-bold py-3 border border-[#B99808] hover:bg-[#B99808] hover:text-white rounded-xl">
               {t.button}
