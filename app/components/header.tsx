@@ -12,7 +12,12 @@ interface HeaderProps {
   setIsMenuOpen: (open: boolean) => void;
 }
 
-export default function Header({ lang, toggleLang, isMenuOpen, setIsMenuOpen }: HeaderProps) {
+export default function Header({
+  lang,
+  toggleLang,
+  isMenuOpen,
+  setIsMenuOpen
+}: HeaderProps) {
   const t = messages[lang];
 
   return (
@@ -25,76 +30,94 @@ export default function Header({ lang, toggleLang, isMenuOpen, setIsMenuOpen }: 
             <img
               src="/logo.jpg"
               alt="Logo"
-              className="h-12 w-12 rounded-full object-cover border border-gray-100"
+              className="h-12 w-12 rounded-full object-cover border border-gray-100 cursor-pointer"
             />
           </Link>
         </div>
 
-        {/* --- MENU (Center) --- */}
+        {/* --- MENU (DESKTOP) --- */}
         <nav className="hidden md:flex flex-[2] justify-center items-center gap-10 text-[#B99808] font-bold">
-          {t?.nav?.map((item: string, index: number) => (
-            <a key={index} href={`#${index}`} className="hover:text-black transition-colors whitespace-nowrap">
-              {item}
-            </a>
+          {t.nav.map((item, index) => (
+            <Link
+              key={index}
+              href={`/${lang}/${item.path}`}
+              className="hover:text-black transition-colors whitespace-nowrap"
+            >
+              {item.label}
+            </Link>
           ))}
         </nav>
         
-        {/* --- ACTIONS (Right) --- */}
+        {/* --- ACTIONS (RIGHT) --- */}
         <div className="hidden md:flex flex-1 items-center justify-end gap-5">
-          {/* Language Toggle Button */}
-          <button 
-            onClick={toggleLang} 
-            className="flex items-center gap-2 text-gray-500 font-bold hover:text-[#B99808] transition-colors"
+          
+          {/* Language Toggle */}
+          <button
+            onClick={toggleLang}
+            className="flex items-center gap-2 text-gray-500 font-bold hover:text-[#B99808]"
           >
             <Globe size={18} />
-            <span className="text-sm uppercase">{lang === 'kh' ? 'ខ្មែរ' : 'EN'}</span>
+            <span className="text-sm uppercase">
+              {lang === 'kh' ? 'ខ្មែរ' : 'EN'}
+            </span>
           </button>
 
-          {/* DYNAMIC LOGIN BUTTON */}
-          <Link
-            href={`/${lang}/customer-login`}
-            className="bg-[#B48C00] text-white px-8 py-2.5 rounded-full font-bold hover:bg-[#967500] transition-all active:scale-95 shadow-lg shadow-yellow-900/10"
-          >
-            {lang === 'kh' ? 'ចូលប្រើ' : 'Login'}
+          {/* Login Button */}
+          <Link href={`/${lang}/customer-login`}>
+            <button className="bg-[#B48C00] text-white px-8 py-2.5 rounded-full font-bold hover:bg-[#967500] transition-all active:scale-95 shadow-lg">
+              {lang === 'kh' ? 'ចូលប្រើ' : 'Login'}
+            </button>
           </Link>
         </div>
 
-        {/* --- MOBILE TOGGLE --- */}
-        <button className="md:hidden text-[#B99808] p-2" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+        {/* --- MOBILE MENU BUTTON --- */}
+        <button
+          className="md:hidden text-[#B99808] p-2"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
           {isMenuOpen ? <X size={32} /> : <Menu size={32} />}
         </button>
       </div>
 
-      {/* --- MOBILE DROPDOWN --- */}
+      {/* --- MOBILE MENU --- */}
       {isMenuOpen && (
         <div className="absolute top-20 left-0 w-full bg-white shadow-2xl md:hidden flex flex-col p-8 gap-6 border-t animate-in fade-in slide-in-from-top-5 duration-300">
-          {t?.nav?.map((item: string, index: number) => (
-            <a 
-              key={index} 
-              href="#" 
-              className={`text-[#B99808] font-bold text-xl border-b pb-3 ${lang === 'kh' ? 'font-khmer' : ''}`} 
+          
+          {/* Mobile Nav Links */}
+          {t.nav.map((item, index) => (
+            <Link
+              key={index}
+              href={`/${lang}/${item.path}`}
               onClick={() => setIsMenuOpen(false)}
+              className={`text-[#B99808] font-bold text-xl border-b pb-3 ${
+                lang === 'kh' ? 'font-khmer' : ''
+              }`}
             >
-              {item}
-            </a>
+              {item.label}
+            </Link>
           ))}
-         
+
+          {/* Mobile Actions */}
           <div className="flex flex-col gap-4 mt-2">
-            {/* Mobile Language Switch */}
-            <button 
-              onClick={() => { toggleLang(); setIsMenuOpen(false); }} 
-              className="flex items-center justify-center gap-2 text-gray-600 font-bold py-4 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-colors"
+            
+            {/* Language Switch */}
+            <button
+              onClick={() => {
+                toggleLang();
+                setIsMenuOpen(false);
+              }}
+              className="flex items-center justify-center gap-2 text-gray-600 font-bold py-4 bg-gray-50 hover:bg-gray-100 rounded-2xl"
             >
-              <Globe size={20} /> 
+              <Globe size={20} />
               {lang === 'en' ? 'ភាសាខ្មែរ' : 'English'}
             </button>
 
-            {/* Mobile Login Button */}
-            <Link href={`/${lang}/customer-login`} className="w-full">
-              <button 
-                onClick={() => setIsMenuOpen(false)} 
-                className="w-full flex items-center justify-center py-4 bg-[#B48C00] text-white font-bold rounded-2xl shadow-md active:scale-[0.98] transition-all"
-              >
+            {/* Login Button */}
+            <Link
+              href={`/${lang}/customer-login`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <button className="w-full flex items-center justify-center py-4 bg-[#B48C00] text-white font-bold rounded-2xl shadow-md active:scale-[0.98]">
                 {lang === 'kh' ? 'ចូលប្រើប្រាស់ឥឡូវនេះ' : 'Login Now'}
               </button>
             </Link>

@@ -3,7 +3,12 @@ export type Language = 'en' | 'kh';
 
 export const messages = {
 en: {
-    nav: ["Home", "About US", "Menu", "Booking", "Contact" ],
+     nav: [
+    { label: "Home", path: "" },
+    { label: "About", path: "about" },
+    { label: "Booking", path: "booking" },
+    { label: "Contact", path: "contact" }
+    ],
     button:"Login",
     heroTitle: "Sokchea Theavy Restaurant",
     heroSub: "Professional Catering for All Occasions & VIP Events",
@@ -40,7 +45,12 @@ en: {
     }
 },
 kh: {
-    nav: ["ទំព័រដើម", "អំពីយើង", "មុខម្ហូប", "ការកក់", "ទំនាក់ទំនង"],
+    nav: [
+    { label: "ទំព័រដើម", path: "" },
+    { label: "អំពីយើង", path: "about" },
+    { label: "ការកក់", path: "booking" },
+    { label: "ទំនាក់ទំនង", path: "contact" }
+    ],
     button: "ចូលប្រើ",
     heroTitle: "ភោជនីយដ្ឋាន សុខជា​ ធាវី",
     heroSub: "ផ្តល់សេវាកម្មម្ហូបអាហារ គ្រប់កម្មវិធីផ្សេងៗ ទាំងការវេចខ្ចប់ និងកម្មវិធី VIP",
