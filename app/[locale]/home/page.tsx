@@ -32,18 +32,21 @@ export default function HomePage() {
   const catering = [
     {
       src: "/bd.jpg",
-      label: t.birthday,
-      href: `/${lang}/services/birthday`
+      label: t.factory,
+      href: `/${lang}/services/factory`,
+      className: "font-bold"
     },
     {
       src: "/Festive.webp",
-      label: t.ceremony,
-      href: `/${lang}/services/festive`
+      label: t.food,
+      href: `/${lang}/services/food`,
+      className: "font-bold"
     },
     {
       src: "/wedding.jpg",
-      label: t.wedding,
-      href: `/${lang}/services/wedding`
+      label: t.both,
+      href: `/${lang}/services/both`,
+      className: "font-bold"
     },
   ];
 

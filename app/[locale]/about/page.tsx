@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, Phone, Send } from 'lucide-react';
 import Header from '../../components/header';
 import { messages, Language } from '../../i18n/messages';
 import { TeamHeader } from '../../components/teamheader';
+import { Menbere } from 'next/font/google';
 
 export default function AboutPage() {
     const [lang, setLang] = useState<Language>('en');
@@ -15,6 +16,28 @@ export default function AboutPage() {
     const [activeTab, setActiveTab] = useState<'managers' | 'ourTeam'>('managers');
 
     const toggleLang = () => setLang(lang === 'en' ? 'kh' : 'en');
+
+    //start fetch API
+    const [teamDate, setTeamDate] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchTeams = async () => {
+            try {
+                const response = await fetch('/api/teams');
+                const result = await response.json();
+                if (result.success) {
+                    setTeamDate(result.data);
+                }
+            }catch (error) {
+                console.error("Error fetching team:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTeams();
+    }, []);
+    
 
     return (
         <div className={`min-h-screen bg-white text-[#333333] ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
@@ -72,50 +95,40 @@ export default function AboutPage() {
                     {/* បញ្ចូល TeamHeader និងបញ្ជូន Props ទៅឱ្យវា */}
                     <TeamHeader t={t} active={activeTab} setActive={setActiveTab} />
 
-                    {/* បង្ហាញ Content ផ្សេងគ្នាតាម Tab */}
-            <div className="mt-12 w-full transition-opacity duration-500">
-    {activeTab === 'managers' ? (
-        /* ប្តូរទៅជា grid-cols-4 ដើម្បីឱ្យចេញ ៤ រូបក្នុង ១ ជួរ */
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="p-2 border border-gray-100 rounded-xl shadow-sm">
-                <img src="/image1.jpg" className="w-full h-64 object-cover rounded-lg mb-2" alt="Manager 1" />
-                <p className="font-bold text-[#333333]">Manager Name</p>
-            </div>
-            <div className="p-2 border border-gray-100 rounded-xl shadow-sm">
-                <img src="/image2.jpg" className="w-full h-64 object-cover rounded-lg mb-2" alt="Manager 2" />
-                <p className="font-bold text-[#333333]">Manager Name</p>
-            </div>
-            <div className="p-2 border border-gray-100 rounded-xl shadow-sm">
-                <img src="/image1.jpg" className="w-full h-64 object-cover rounded-lg mb-2" alt="Manager 3" />
-                <p className="font-bold text-[#333333]">Manager Name</p>
-            </div>
-            <div className="p-2 border border-gray-100 rounded-xl shadow-sm">
-                <img src="/image2.jpg" className="w-full h-64 object-cover rounded-lg mb-2" alt="Manager 4" />
-                <p className="font-bold text-[#333333]">Manager Name</p>
-            </div>
-        </div>
-    ) : (
-        /* ផ្នែក Team Member ក៏ប្រើ grid-cols-4 ដូចគ្នា */
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="p-2 border border-gray-100 rounded-xl shadow-sm">
-                <img src="/image1.jpg" className="w-full h-64 object-cover rounded-lg mb-2" alt="Team 1" />
-                <p className="font-bold text-[#333333]">Chef Name</p>
-            </div>
-            <div className="p-2 border border-gray-100 rounded-xl shadow-sm">
-                <img src="/wedding.jpg" className="w-full h-64 object-cover rounded-lg mb-2" alt="Team 2" />
-                <p className="font-bold text-[#333333]">Chef Name</p>
-            </div>
-            <div className="p-2 border border-gray-100 rounded-xl shadow-sm">
-                <img src="/bd.jpg" className="w-full h-64 object-cover rounded-lg mb-2" alt="Team 3" />
-                <p className="font-bold text-[#333333]">Chef Name</p>
-            </div>
-            <div className="p-2 border border-gray-100 rounded-xl shadow-sm">
-                <img src="/chef.jpg" className="w-full h-64 object-cover rounded-lg mb-2" alt="Team 4" />
-                <p className="font-bold text-[#333333]">Chef Name</p>
-            </div>
-        </div>
-    )}
-</div>
+                <div className="mt-12 w-full transition-opacity duration-500">
+                    {loading ? (
+                        <p className="text-gray-500">Loading...</p>
+                    ) : (
+                        <div className="grid grid-cols-4 md:grid0cols-4 gap-6">
+                            {teamDate
+                                .filter((member) => {
+                                    // កូដនេះសម្រាប់ឆែកថា តើវាជា Manager ឬ Team ធម្មតា (ឆែកតាម slug ឬ field role ក្នុង DB របស់អ្នក)
+                                    const isManager = member.slug.includes('manager'); // ឧទាហរណ៍: ប្រសិនបើ slug មាន "manager" នោះវាជា Manager
+                                    return activeTab === 'managers' ? isManager : !isManager;
+                                })
+                                .map((member) => (
+                                    <div key={member.id} className="p-2 border border-gray-100 rounded-xl shadow-sm">
+                                    <img
+                                        src={member.image}
+                                        className="w-full h-64 object-cover rounded-lg mb-2"
+                                        alt="Member profile"
+                                        // បន្ថែមកូដខាងក្រោមនេះ
+                                        onError={(e) => {
+                                        (e.target as HTMLImageElement).src = "https://ui-avatars.com/api/?name=" + member.translations[lang]?.name + "&background=random";
+                                        }}
+                                        />
+                                        <p className="font-bold text-[#333333]">
+                                            {member.tranlations}
+                                        </p>
+                                        <p className="text-sm text-gray-500">
+                                            {member.tranlations}
+                                        </p>
+                                    </div>
+                                ))
+                                }
+                        </div>
+                    ) }
+                </div>
                 </section>
             </main>
 

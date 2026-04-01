@@ -12,7 +12,7 @@ export async function GET(request: NextRequest, { params }: Props) {
     
     const teamMember = await prisma.teamMember.findUnique({
       // Convert string ID from URL to Number for your schema
-      where: { id: Number(id) }, 
+      where: { id: Number(id) },
     });
 
     if (!teamMember) {

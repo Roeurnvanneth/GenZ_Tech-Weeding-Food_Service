@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@prisma/adapter-pg": "^7.5.0",
-    "@prisma/client": "^7.5.0",
+    "@prisma/adapter-pg": "^7.6.0",
+    "@prisma/client": "^7.6.0",
     "@tanstack/react-query": "^5.90.21",
     "browser-image-compression": "^2.0.2",
     "button": "^1.1.1",
