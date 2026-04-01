@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Menu, X, Globe } from 'lucide-react';
+import { Menu, X, Globe, LogOut, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { messages, Language } from '../i18n/messages';
 
@@ -10,6 +10,7 @@ interface HeaderProps {
   toggleLang: () => void;
   isMenuOpen: boolean;
   setIsMenuOpen: (open: boolean) => void;
+  user: { name: string } | null; // ទទួលទិន្នន័យ User ពី HomePage
 }
 
 export default function Header({
@@ -20,9 +21,16 @@ export default function Header({
 }: HeaderProps) {
   const t = messages[lang];
 
+  // អនុគមន៍សម្រាប់ Logout
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    window.location.reload();
+  };
+
   return (
     <header className="bg-white sticky top-0 z-50 shadow-md h-20 flex items-center border-b border-gray-100 font-sans">
-      <div className="max-w-7xl mx-auto px-6 w-full flex justify-between items-center">
+      <div className="max-w-7xl mx-auto px-6 w-full flex justify-between items-center text-black">
         
         {/* --- LOGO --- */}
         <div className="flex-1 flex items-center">
@@ -36,12 +44,12 @@ export default function Header({
         </div>
 
         {/* --- MENU (DESKTOP) --- */}
-        <nav className="hidden md:flex flex-[2] justify-center items-center gap-10 text-[#B99808] font-bold">
+        <nav className="hidden md:flex flex-[2] justify-center items-center gap-10 text-black font-bold">
           {t.nav.map((item, index) => (
             <Link
               key={index}
               href={`/${lang}/${item.path}`}
-              className="hover:text-black transition-colors whitespace-nowrap"
+              className="hover:text-[#B99808] transition-colors whitespace-nowrap"
             >
               {item.label}
             </Link>
@@ -72,7 +80,7 @@ export default function Header({
 
         {/* --- MOBILE MENU BUTTON --- */}
         <button
-          className="md:hidden text-[#B99808] p-2"
+          className="md:hidden text-[#B99808] p-2 "
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
           {isMenuOpen ? <X size={32} /> : <Menu size={32} />}
@@ -81,7 +89,7 @@ export default function Header({
 
       {/* --- MOBILE MENU --- */}
       {isMenuOpen && (
-        <div className="absolute top-20 left-0 w-full bg-white shadow-2xl md:hidden flex flex-col p-8 gap-6 border-t animate-in fade-in slide-in-from-top-5 duration-300">
+        <div className="absolute top-20 left-0 w-full bg-white shadow-2xl md:hidden flex flex-col p-8 gap-6 border-t animate-in fade-in slide-in-from-top-5 duration-300 ">
           
           {/* Mobile Nav Links */}
           {t.nav.map((item, index) => (
@@ -89,7 +97,7 @@ export default function Header({
               key={index}
               href={`/${lang}/${item.path}`}
               onClick={() => setIsMenuOpen(false)}
-              className={`text-[#B99808] font-bold text-xl border-b pb-3 ${
+              className={`hover:text-[#B99808] text-black font-bold text-xl border-b pb-3 ${
                 lang === 'kh' ? 'font-khmer' : ''
               }`}
             >
@@ -106,7 +114,7 @@ export default function Header({
                 toggleLang();
                 setIsMenuOpen(false);
               }}
-              className="flex items-center justify-center gap-2 text-gray-600 font-bold py-4 bg-gray-50 hover:bg-gray-100 rounded-2xl"
+              className="flex items-center justify-center gap-2 text-gray-600 font-bold py-4 bg-gray-50 hover:bg-[#B48C00] hover:text-white rounded-2xl"
             >
               <Globe size={20} />
               {lang === 'en' ? 'ភាសាខ្មែរ' : 'English'}
@@ -117,7 +125,7 @@ export default function Header({
               href={`/${lang}/customer-login`}
               onClick={() => setIsMenuOpen(false)}
             >
-              <button className="w-full flex items-center justify-center py-4 bg-[#B48C00] text-white font-bold rounded-2xl shadow-md active:scale-[0.98]">
+              <button className="w-full flex hover:bg-[#967500] items-center justify-center py-4 bg-[#B48C00] text-white font-bold rounded-2xl shadow-md active:scale-[0.98]">
                 {lang === 'kh' ? 'ចូលប្រើប្រាស់ឥឡូវនេះ' : 'Login Now'}
               </button>
             </Link>
