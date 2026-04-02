@@ -68,8 +68,8 @@ model Booking {
   id              Int      @id @default(autoincrement())
   customerName    String
   phoneNumber     String
-  programType     String   
-  programDate     String   
+  programType     String
+  programDate     String
   // ADD THESE MISSING FIELDS BELOW:
   programTime     String?   // Added
   startDateTime   String?   // Added
@@ -78,11 +78,11 @@ model Booking {
   translations Json       // { kh: { name }, en: { name } }
   // -------------------------
   location        String
-  guestCount      Int      
+  guestCount      Int
   hasFood         Boolean  @default(false)
   hasTent         Boolean  @default(false)
-  totalPrice      Float    
-  serviceType     String   
+  totalPrice      Float
+  serviceType     String
   status          String   @default("Pending")
   createdAt       DateTime @default(now())
 }

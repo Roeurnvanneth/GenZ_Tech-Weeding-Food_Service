@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Header from '../../components/header';
 import { messages, Language } from '../../i18n/messages';
 import FilterButtons from '../../components/filterButtons';
+import Footer from '@/app/components/footer';
 
 // --- 1. CARD COMPONENT PROPS ---
 interface EventCardProps {
@@ -13,8 +14,8 @@ interface EventCardProps {
     price: string;
     capacity: string | number;
     isMultiImage: boolean;
-    t: any;        
-    lang: Language; 
+    t: any;
+    lang: Language;
 }
 
 // --- 2. THE CARD COMPONENT ---
@@ -167,6 +168,8 @@ export default function FoodPage() {
                     </div>
                 </div>
             </main>
+            <Footer t={t} lang={lang} />
         </div>
+        
     );
 }
