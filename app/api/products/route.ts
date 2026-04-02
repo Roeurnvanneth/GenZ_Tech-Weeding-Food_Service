@@ -22,10 +22,10 @@ export async function POST(request: Request) {
         slug: slug,
         // បំប្លែងទៅជា Number ដើម្បីការពារ Error Data Type
         maxPrice: Number(maxPrice) || 0,
-        hallPrice: Number(hallPrice) || 0, 
+        hallPrice: Number(hallPrice) || 0,
         videoUrl: videoUrl || null,
         isPoppular: Boolean(isPoppular),
-        images: Array.isArray(images) ? images : [], 
+        images: Array.isArray(images) ? images : [],
         translations: translations || {},
         categoryId: Number(categoryId),
       },
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("PRISMA ERROR:", error.message);
     return NextResponse.json(
-      { success: false, error: error.message }, 
+      { success: false, error: error.message },
       { status: 500 }
     );
   }
@@ -43,14 +43,14 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const products = await prisma.product.findMany({ 
+    const products = await prisma.product.findMany({
       include: { category: true },
-      orderBy: { createdAt: 'desc' } 
+      orderBy: { createdAt: 'desc' }
     });
     return NextResponse.json({ success: true, data: products });
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, error: error.message }, 
+      { success: false, error: error.message },
       { status: 500 }
     );
   }
