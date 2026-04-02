@@ -99,7 +99,7 @@ export default function AboutPage() {
                     {loading ? (
                         <p className="text-gray-500">Loading...</p>
                     ) : (
-                        <div className="grid grid-cols-4 md:grid0cols-4 gap-6">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                             {teamDate
                                 .filter((member) => {
                                     // កូដនេះសម្រាប់ឆែកថា តើវាជា Manager ឬ Team ធម្មតា (ឆែកតាម slug ឬ field role ក្នុង DB របស់អ្នក)
