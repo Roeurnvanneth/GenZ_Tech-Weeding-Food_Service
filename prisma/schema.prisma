@@ -28,30 +28,28 @@ enum Role {
 
 
 
+// --- Keep this one ---
 model Category {
-  id           Int    @id @default(autoincrement())
-  slug         String  @unique
-  isPoppular    Boolean @default(false)
-  translations Json
-  createdAt    DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  products     Product[]
-
+  id       Int       @id @default(autoincrement())
+  name     String
+  products Product[]
 }
 
 model Product {
-  id           Int      @id @default(autoincrement())
-  slug         String   @unique
-  maxPrice     Float    @default(0) // ត្រូវតែមាន Column នេះ
-  hallPrice    Float    @default(0) // 💡 តម្លៃជួលរោង/សាល (បន្ថែមថ្មី)
-  isPoppular   Boolean  @default(false)
-  videoUrl     String?
-  images       Json     // សម្រាប់រក្សាទុក Array ["url1", "url2", ...]
-  translations Json
-  categoryId   Int
-  category     Category @relation(fields: [categoryId], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  slug          String   @unique
+  title         String?
+  maxPrice      Float    @default(0)
+  hallPrice     Float    @default(0)
+  videoUrl      String?
+  images        String[]
+  translations  Json
+  isPoppular    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  categoryId    Int
+  category      Category @relation(fields: [categoryId], references: [id])
 }
 
 model TeamMember {

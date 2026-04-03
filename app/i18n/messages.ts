@@ -30,7 +30,7 @@ en: {
     f_w:"Food & Wedding Services",
     f_d:"Food & Decoration Package",
     for:"For 150 people",
-    from:"From Sokchea Theavy Factory and Wedding Service",
+    from:" Sokchea Theavy Factory and Wedding Service",
     missionTitle:"To create exceptional culinary experiences for every customer.",
     missionDesc:"We aim to be the leading choice for quality catering services that bring people together through delicious food and outstanding service. Our mission is to preserve rich flavors while continuously innovating in presentation and service delivery, ensuring every event becomes a memorable experience for our clients and their guests.",
     professionalchef: "Professional chef",

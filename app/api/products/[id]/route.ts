@@ -14,6 +14,7 @@ export async function PUT(request: Request, { params }: Props) {
       data: {
         slug: body.slug,
         maxPrice: Number(body.maxPrice),
+        title: body.translations.en || "Untitled", // បន្ថែម Default Title ប្រសិនបើមិនមាន
         hallPrice: Number(body.hallPrice) || 0,
         videoUrl: body.videoUrl,
         categoryId: Number(body.categoryId),
