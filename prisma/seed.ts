@@ -1,13 +1,10 @@
-import { PrismaClient } from '@prisma/client';
-
-
-const prisma = new PrismaClient();
-
+import 'dotenv/config';
+import { prisma } from '../lib/prisma';
 
 async function main() {
-  console.log("🚀 កំពុងចាប់ផ្ដើមដាក់ទិន្នន័យ Seed ឱ្យត្រូវតាម Schema ថ្មី...");
+  console.log("🚀 កំពុងចាប់ផ្ដើមដាក់ទិន្នន័យ Seed ចំនួនច្រើន...");
 
-  // ១. សម្អាតទិន្នន័យចាស់ (លុបតាមលំដាប់ដើម្បីកុំឱ្យទើស Foreign Key)
+  // ១. សម្អាតទិន្នន័យចាស់
   await prisma.bookingItem.deleteMany({});
   await prisma.booking.deleteMany({});
   await prisma.cateringItem.deleteMany({});
@@ -21,7 +18,8 @@ async function main() {
   await prisma.teamMember.deleteMany({});
   await prisma.user.deleteMany({});
 
-  // ២. បង្កើត Categories (សម្រាប់ Menu និង Product)
+  // ២. បង្កើត Categories ច្រើនជាងមុន
+  console.log("📂 កំពុងបង្កើត Categories...");
   const catFood = await prisma.category.create({
     data: {
       name: "មុខម្ហូបខ្មែរ",
@@ -31,139 +29,169 @@ async function main() {
     }
   });
 
-  // ៣. បង្កើត Event Types (ប្រភេទកម្មវិធី)
-  const evWedding = await prisma.eventType.create({ data: { name: "អាពាហ៍ពិពាហ៍ (Wedding)" } });
-  const evFuneral = await prisma.eventType.create({ data: { name: "បុណ្យទាន (Religious)" } });
-  const evBirthday = await prisma.eventType.create({ data: { name: "ខួបកំណើត (Birthday)" } });
+  const catAppetizer = await prisma.category.create({
+    data: {
+      name: "គ្រឿងក្លែម",
+      slug: "appetizers",
+      isPoppular: true,
+      translations: { kh: "គ្រឿងក្លែម", en: "Appetizers" }
+    }
+  });
 
-  // ៤. បង្កើត Catering Standards
+  const catEquipment = await prisma.category.create({
+    data: {
+      name: "សម្ភារៈដេគ័រ",
+      slug: "decoration-items",
+      isPoppular: true,
+      translations: { kh: "សម្ភារៈដេគ័រ", en: "Decoration Items" }
+    }
+  });
+
+  // ៣. បង្កើត Event Types & Standards
+  const evWedding = await prisma.eventType.create({ data: { name: "អាពាហ៍ពិពាហ៍ (Wedding)" } });
+  const evParty = await prisma.eventType.create({ data: { name: "ជប់លៀង (Party)" } });
   const stdGold = await prisma.cateringStandard.create({ data: { name: "Gold Standard" } });
   const stdSilver = await prisma.cateringStandard.create({ data: { name: "Silver Standard" } });
 
-  // ៥. បង្កើត Menus (មុខម្ហូប)
+  // ៤. បង្កើត Menus ច្រើនមុខ (ដកស្រង់ចេញពីបញ្ជីម្ហូបពេញនិយម)
+  console.log("🍽️ កំពុងបង្កើត Menus...");
   const menusData = [
-    { name: "គ្រាប់ស្វាយចន្ទីលីង", price: 5 },
-    { name: "ញាំមាន់ត្រយូងចេក", price: 8 },
-    { name: "ត្រីដុតមើមជួយ", price: 12 },
-    { name: "ស៊ុបទាកាប៉ា", price: 15 },
-    { name: "បង្គាបំពងខ្ទឹមស", price: 18 },
-    { name: "បបរមឹក", price: 4 },
+    { name: "គ្រាប់ស្វាយចន្ទីលីង", price: 5, catId: catAppetizer.id },
+    { name: "ញាំមាន់ត្រយូងចេក", price: 8, catId: catFood.id },
+    { name: "ស៊ុបទាកាប៉ា", price: 15, catId: catFood.id },
+    { name: "ត្រីដុតមើមជួយ", price: 12, catId: catFood.id },
+    { name: "បង្គាបំពងខ្ទឹមស", price: 18, catId: catFood.id },
+    { name: "ឡុកឡាក់សាច់គោ", price: 10, catId: catFood.id },
+    { name: "បបរមឹក", price: 6, catId: catFood.id },
   ];
 
-  const createdMenus = [];
+  const createdMenuIds: number[] = [];
   for (const m of menusData) {
     const menu = await prisma.menu.create({
       data: {
         menu_name: m.name,
         price_usd: m.price,
         price_khr: m.price * 4100,
-        categoryId: catFood.id,
+        categoryId: m.catId,
         status: "active"
       }
     });
-    createdMenus.push(menu);
-
-    // បង្កើត MenuPricing សម្រាប់ Menu នីមួយៗ (សម្រាប់ប្រើក្នុង BookingItem)
-    await prisma.menuPricing.create({
-      data: {
-        menu_id: menu.id,
-        price_usd: m.price,
-        price_khr: m.price * 4100,
-      }
-    });
+    createdMenuIds.push(menu.id);
   }
 
-  // ៦. បង្កើត Catering Packages (ឈុតម្ហូប)
-  // --- ឈុតមង្គលការ ---
+  // ៥. បង្កើត Catering Packages ចំនួន ២
+  console.log("🍱 កំពុងបង្កើត Catering Packages...");
   const weddingPackage = await prisma.catering.create({
     data: {
       name: "Wedding Luxury Set A",
       catering_name: "ឈុតអាពាហ៍ពិពាហ៍កម្រិតមាស",
-      event_name: "កម្មវិធីអាពាហ៍ពិពាហ៍ (Wedding)",
-      description: "ឈុតម្ហូបពិសេស ៧ មុខ សម្រាប់ការរៀបការ",
+      event_name: "Wedding",
+      description: "ឈុតម្ហូបពិសេស ៧ មុខសម្រាប់ការរៀបការ",
       total_price: 1500.00,
       catering_standard_id: stdGold.id,
       eventTypeId: evWedding.id,
-      menuId: [createdMenus[0].id, createdMenus[1].id, createdMenus[2].id, createdMenus[3].id]
+      menuId: createdMenuIds.slice(0, 5) // យក ៥ មុខដំបូង
     }
   });
 
-  // --- ឈុតបុណ្យទាន ---
-  const funeralPackage = await prisma.catering.create({
+  const partyPackage = await prisma.catering.create({
     data: {
-      name: "Standard Religious Set",
-      catering_name: "ឈុតបុណ្យទានបែបសាមញ្ញ",
-      event_name: "កម្មវិធីបុណ្យ (Religious Ceremony)",
-      description: "ម្ហូបសម្រាប់ទទួលភ្ញៀវក្នុងពិធីបុណ្យ",
-      total_price: 850.00,
+      name: "Standard Party Set",
+      catering_name: "ឈុតជប់លៀងលក្ខណៈគ្រួសារ",
+      event_name: "Party",
+      description: "ម្ហូប ៤ មុខ សម្រាប់ជប់លៀងសាមញ្ញ",
+      total_price: 800.00,
       catering_standard_id: stdSilver.id,
-      eventTypeId: evFuneral.id,
-      menuId: [createdMenus[5].id, createdMenus[1].id, createdMenus[3].id]
+      eventTypeId: evParty.id,
+      menuId: createdMenuIds.slice(4, 7) // យក ៣ មុខចុងក្រោយ
     }
   });
 
-  // ៧. បង្កើត CateringItem (Pivot Table សម្រាប់ភ្ជាប់ Catering ទៅ Menu)
-  await prisma.cateringItem.createMany({
-    data: [
-      { cateringId: weddingPackage.id, menuId: createdMenus[0].id, eventTypeId: evWedding.id },
-      { cateringId: weddingPackage.id, menuId: createdMenus[1].id, eventTypeId: evWedding.id },
-      { cateringId: funeralPackage.id, menuId: createdMenus[5].id, eventTypeId: evFuneral.id },
-    ]
-  });
+  // ៦. បង្កើត Products ច្រើនមុខ (Items)
+  console.log("📦 កំពុងបង្កើត Products...");
+  const products = [
+    { title: "តុដេគ័របែបអឺរ៉ុប", slug: "euro-table", price: 25 },
+    { title: "កៅអី VIP", slug: "vip-chair", price: 5 },
+    { title: "ផ្កាស្រស់តុបតែងមុខរោង", slug: "fresh-flower-gate", price: 250 },
+    { title: "ប្រព័ន្ធសំឡេងស្ដង់ដារ", slug: "sound-system", price: 120 },
+    { title: "កម្រាលព្រំក្រហម (១០ម៉ែត្រ)", slug: "red-carpet", price: 30 },
+  ];
 
-  // ៨. បង្កើត User តេស្ត
-  const testUser = await prisma.user.create({
-    data: {
-      name: "Sok Dara",
-      phone: "012345678",
-      role: "USER"
-    }
-  });
+  for (const p of products) {
+    await prisma.product.create({
+      data: {
+        title: p.title,
+        slug: p.slug,
+        price: p.price,
+        maxPrice: p.price + 10,
+        hallPrice: p.price - 5,
+        isPoppular: true,
+        images: [`${p.slug}-1.jpg`, `${p.slug}-2.jpg`],
+        translations: {
+          kh: { title: p.title, desc: `សេវាកម្មជួល ${p.title} គុណភាពខ្ពស់` },
+          en: { title: p.title.replace(/[^\x00-\x7F]/g, ""), desc: `High quality ${p.title} rental` }
+        },
+        categoryId: catEquipment.id
+      }
+    });
+  }
 
-  // ៩. បង្កើត Real Bookings (ការកក់ពិតប្រាកដ)
-  const booking1 = await prisma.booking.create({
-    data: {
-      customerName: "លោក វណ្ណៈ",
-      phoneNumber: "099887766",
-      userId: testUser.id,
-      programType: "អាពាហ៍ពិពាហ៍",
-      programDate: "2024-05-20",
-      event_date: new Date("2024-05-20"),
-      location: "បុរីប៉េងហួត បឹងស្នោ",
-      guestCount: 500,
-      serviceType: "Full Service",
-      totalPrice: 1500.00,
-      status: "Confirmed",
-      catering_id: weddingPackage.id,
-      hasFood: true
-    }
-  });
+  // ៧. បង្កើត Team Members ច្រើននាក់
+  console.log("👥 កំពុងបង្កើត Team Members...");
+  const team = [
+    { slug: "sok-vichea", name: "សុខ វិជ្ជា", pos: "មេចុងភៅធំ", img: "vichea.jpg" },
+    { slug: "keo-maly", name: "កែវ ម៉ាលី", pos: "អ្នកគ្រប់គ្រងកម្មវិធី", img: "maly.jpg" },
+    { slug: "rath-samnang", name: "រ័ត្ន សំណាង", pos: "អ្នកជំនាញដេគ័រ", img: "samnang.jpg" },
+    { slug: "chiv-vutha", name: "ជីវ វុត្ថា", pos: "អ្នកគ្រប់គ្រងសេវាកម្ម", img: "vutha.jpg" },
+  ];
 
-  const booking2 = await prisma.booking.create({
-    data: {
-      customerName: "អ្នកស្រី ស្រីមុំ",
-      phoneNumber: "011223344",
-      programType: "បុណ្យផ្ទះ",
-      programDate: "2024-04-15",
-      event_date: new Date("2024-04-15"),
-      location: "ខណ្ឌច្បារអំពៅ",
-      guestCount: 150,
-      serviceType: "Catering Only",
-      totalPrice: 850.00,
-      status: "Pending",
-      catering_id: funeralPackage.id,
-      hasFood: true
-    }
-  });
+  for (const t of team) {
+    await prisma.teamMember.create({
+      data: {
+        slug: t.slug,
+        image: t.img,
+        translations: {
+          kh: { name: t.name, position: t.pos, bio: "បទពិសោធន៍ច្រើនឆ្នាំក្នុងវិស័យ Catering" },
+          en: { name: t.slug.replace("-", " "), position: t.pos, bio: "Professional in catering service" }
+        }
+      }
+    });
+  }
 
-  console.log("✅ Seed ជោគជ័យ! ប្អូនអាចឆែក Dashboard មើលទិន្នន័យពិតប្រាកដបានហើយ។");
+  // ៨. បង្កើត Users & Bookings ច្រើន
+  console.log("📝 កំពុងបង្កើត Bookings...");
+  const user1 = await prisma.user.create({ data: { name: "Sok Dara", phone: "012345678", role: "USER" } });
+  const user2 = await prisma.user.create({ data: { name: "Meas Sreymom", phone: "099112233", role: "USER" } });
+
+  const bookings = [
+    { name: "លោក វណ្ណៈ", user: user1.id, date: "2024-05-20", cat: weddingPackage.id, price: 1500 },
+    { name: "អ្នកស្រី ស្រីមុំ", user: user2.id, date: "2024-06-15", cat: partyPackage.id, price: 800 },
+    { name: "លោក ចាន់ណា", user: user1.id, date: "2024-07-10", cat: weddingPackage.id, price: 1500 },
+  ];
+
+  for (const b of bookings) {
+    await prisma.booking.create({
+      data: {
+        customerName: b.name,
+        phoneNumber: "010000000",
+        userId: b.user,
+        programType: "កម្មវិធី",
+        programDate: b.date,
+        event_date: new Date(b.date),
+        location: "Phnom Penh",
+        guestCount: 200,
+        serviceType: "Full Service",
+        totalPrice: b.price,
+        status: "Confirmed",
+        catering_id: b.cat,
+        hasFood: true
+      }
+    });
+  }
+
+  console.log("✅ Seed ទិន្នន័យបានជោគជ័យពេញលេញ!");
 }
 
 main()
-  .catch((e) => {
-    console.error("❌ Seed Error:", e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

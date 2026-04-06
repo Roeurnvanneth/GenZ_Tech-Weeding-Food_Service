@@ -51,3 +51,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
+
+// --- ១. បន្ថែម function GET នេះដើម្បីឱ្យ Dashboard ឃើញទិន្នន័យ ---
+export async function GET() {
+  try {
+    const caterings = await prisma.catering.findMany({
+      include: {
+        standard: true,
+        items: { include: { menu: true } }
+      },
+      orderBy: {
+        id: 'desc' // បង្ហាញទិន្នន័យថ្មីបំផុតនៅខាងលើ
+      }
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      data: caterings 
+    }, { status: 200 });
+  } catch (error: any) {
+    console.error("GET Error:", error.message);
+    return NextResponse.json({ 
+      success: false, 
+      error: "មិនអាចទាញទិន្នន័យបានឡើយ" 
+    }, { status: 500 });
+  }
+}

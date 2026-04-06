@@ -10,10 +10,10 @@ import {
   LogOut,
   UtensilsCrossed,
   ShieldCheck,
-  Layers,
   Store,
   PartyPopper,
-  Tags, // Icon for Categories
+  Tags,
+  Package, // បន្ថែម Icon សម្រាប់ Product
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -46,9 +46,14 @@ export default function Sidebar() {
       group: "Products & Catalog",
       items: [
         {
-          name: "Categories", // NEW: Added Categories
+          name: "Categories",
           icon: <Tags size={18} />,
           href: `/${locale}/dashboard/categories`,
+        },
+        {
+          name: "Products", // បន្ថែម Products ចូលនៅទីនេះ
+          icon: <Package size={18} />,
+          href: `/${locale}/dashboard/products`,
         },
         {
           name: "Menus",
@@ -56,9 +61,9 @@ export default function Sidebar() {
           href: `/${locale}/dashboard/menus`,
         },
         {
-          name: "Catering Packages",
+          name: "Catering",
           icon: <UtensilsCrossed size={18} />,
-          href: `/${locale}/dashboard/caterings`,
+          href: `/${locale}/dashboard/catering`,
         },
       ],
     },
@@ -71,7 +76,7 @@ export default function Sidebar() {
           href: `/${locale}/dashboard/event-types`,
         },
         {
-          name: "Service Standards",
+          name: "Catering Standards",
           icon: <ShieldCheck size={18} />,
           href: `/${locale}/dashboard/standards`,
         },
