@@ -1,36 +1,31 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// =======================
-// 🟢 CREATE CATEGORY (POST)
-// =======================
-export async function POST(request: Request) {
+// GET: ទាញយក Categories ទាំងអស់
+export async function GET() {
   try {
-    const body = await request.json();
-    const { slug, translations } = body;
-
-    if (!slug || !translations) {
-      return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
-    }
-
-    const newCategory = await prisma.category.create({
-      data: { slug, translations },
-    });
-
-    return NextResponse.json({ success: true, message: "Created!", data: newCategory }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Create failed" }, { status: 500 });
+    const categories = await prisma.category.findMany({ orderBy: { id: 'asc' } });
+    return NextResponse.json({ success: true, data: categories });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
-// =======================
-// 🔵 GET ALL CATEGORIES (GET)
-// =======================
-export async function GET() {
+// POST: បង្កើត Category ថ្មី
+export async function POST(request: Request) {
   try {
-    const categories = await prisma.category.findMany();
-    return NextResponse.json({ success: true, data: categories });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Fetch failed" }, { status: 500 });
+    const body = await request.json();
+    const category = await prisma.category.create({
+      data: {
+        name: body.name,
+        slug: body.slug,
+        description: body.description || "",
+        isPoppular: Boolean(body.isPoppular),
+        translations: body.translations || {},
+      },
+    });
+    return NextResponse.json({ success: true, data: category }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 400 });
   }
 }
