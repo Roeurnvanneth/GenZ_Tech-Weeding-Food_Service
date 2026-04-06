@@ -11,12 +11,9 @@ import {
   UtensilsCrossed,
   ShieldCheck,
   Layers,
-  ChevronRight,
-  Settings,
   Store,
   PartyPopper,
-  PackageSearch,
-  ClipboardList,
+  Tags, // Icon for Categories
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -29,7 +26,6 @@ export default function Sidebar() {
     router.push(`/${locale}/login`);
   };
 
-  // Logic: Products are categorized into Categories, Menus, and Sets
   const navigation = [
     {
       group: "Dashboard",
@@ -47,11 +43,11 @@ export default function Sidebar() {
       ],
     },
     {
-      group: "Products",
+      group: "Products & Catalog",
       items: [
         {
-          name: "Product ",
-          icon: <Layers size={18} />,
+          name: "Categories", // NEW: Added Categories
+          icon: <Tags size={18} />,
           href: `/${locale}/dashboard/categories`,
         },
         {
@@ -89,18 +85,18 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-72 bg-[#0F172A] text-slate-300 h-screen flex flex-col shrink-0 sticky top-0 border-r border-slate-800 shadow-2xl">
+    <aside className="w-72 bg-[#0F172A] text-slate-300 h-screen flex flex-col shrink-0 sticky top-0 border-r border-slate-800 shadow-2xl z-50">
       {/* --- Branding Section --- */}
       <div className="p-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl shadow-lg shadow-yellow-500/10">
-            <Store className="text-white" size={24} />
+          <div className="p-2.5 bg-yellow-500 rounded-2xl shadow-lg shadow-yellow-500/20">
+            <Store className="text-[#0F172A]" size={24} />
           </div>
           <div>
-            <h1 className="text-lg font-black text-white tracking-tight leading-none">
+            <h1 className="text-lg font-black text-white tracking-tight leading-none uppercase">
               SOKCHEA <span className="text-yellow-500">THEAVY</span>
             </h1>
-            <p className="text-[9px] text-slate-500 font-bold tracking-[0.2em] uppercase mt-1">
+            <p className="text-[9px] text-slate-500 font-black tracking-[0.2em] uppercase mt-1.5">
               Admin Control Panel
             </p>
           </div>
@@ -108,36 +104,33 @@ export default function Sidebar() {
       </div>
 
       {/* --- Navigation Scroll Area --- */}
-      <nav className="flex-1 px-4 space-y-7 overflow-y-auto pb-8 custom-scrollbar">
+      <nav className="flex-1 px-4 space-y-8 overflow-y-auto pb-8 custom-scrollbar">
         {navigation.map((group) => (
-          <div key={group.group} className="space-y-2">
-            <p className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-[0.15em]">
+          <div key={group.group} className="space-y-3">
+            <p className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-[0.25em]">
               {group.group}
             </p>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               {group.items.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${
+                    className={`flex items-center justify-between px-5 py-3.5 rounded-[1.25rem] transition-all duration-300 group ${
                       isActive
-                        ? "bg-yellow-500/10 text-white border-l-4 border-yellow-500"
-                        : "hover:bg-slate-800/40 text-slate-400 hover:text-white"
+                        ? "bg-yellow-500 text-[#0F172A] shadow-lg shadow-yellow-500/10 font-bold"
+                        : "hover:bg-slate-800/60 text-slate-400 hover:text-white"
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <span
-                        className={`${isActive ? "text-yellow-500" : "text-slate-500 group-hover:text-yellow-500"}`}
+                        className={`${isActive ? "text-[#0F172A]" : "text-slate-500 group-hover:text-yellow-500 transition-colors"}`}
                       >
                         {item.icon}
                       </span>
-                      <span className="text-sm font-semibold">{item.name}</span>
+                      <span className="text-sm tracking-tight">{item.name}</span>
                     </div>
-                    {isActive && (
-                      <div className="w-1 h-1 bg-yellow-500 rounded-full shadow-[0_0_8px_rgba(234,179,8,1)]" />
-                    )}
                   </Link>
                 );
               })}
@@ -147,42 +140,42 @@ export default function Sidebar() {
       </nav>
 
       {/* --- Profile & Sign Out --- */}
-      <div className="p-4 bg-slate-900/50 border-t border-slate-800">
-        <div className="flex items-center gap-3 px-4 py-3 mb-3 bg-slate-800/30 rounded-2xl">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-slate-700 to-slate-600 border border-slate-500 flex items-center justify-center text-xs font-bold text-yellow-500">
-            ADM
+      <div className="p-6 bg-slate-900/40 border-t border-slate-800/50">
+        <div className="flex items-center gap-3 px-4 py-4 mb-4 bg-[#1e293b]/30 rounded-[1.5rem] border border-slate-800">
+          <div className="w-10 h-10 rounded-xl bg-yellow-500 flex items-center justify-center text-sm font-black text-[#0F172A]">
+            AD
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-white truncate">
-              Main Administrator
+            <p className="text-xs font-black text-white truncate uppercase tracking-tighter">
+              Administrator
             </p>
-            <p className="text-[10px] text-slate-500 truncate">
-              system@sokchea.com
+            <p className="text-[10px] text-slate-500 truncate font-bold">
+              Active Session
             </p>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-4 py-3 text-slate-400 hover:text-rose-400 hover:bg-rose-500/5 rounded-xl transition-all duration-200 group"
+          className="flex items-center gap-3 w-full px-5 py-3 text-slate-500 hover:text-rose-400 hover:bg-rose-500/5 rounded-xl transition-all duration-200 group"
         >
           <LogOut
             size={18}
             className="group-hover:-translate-x-1 transition-transform"
           />
-          <span className="text-sm font-bold">Sign Out</span>
+          <span className="text-sm font-black uppercase tracking-widest">Logout</span>
         </button>
       </div>
 
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 3px;
+          width: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
           background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: #1e293b;
-          border-radius: 10px;
+          border-radius: 20px;
         }
       `}</style>
     </aside>
