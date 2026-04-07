@@ -1,19 +1,26 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const body = await request.json();
-    const category = await prisma.category.create({
-      data: { name: body.name }
+    const category = await prisma.category.findUnique({
+      where: {
+        id: parseInt(params.id),
+      },
+      include: {
+        products: true, // This is great for "Category Detail" pages
+      },
     });
+
+    if (!category) {
+      return NextResponse.json({ error: "Category not found" }, { status: 404 });
+    }
+
     return NextResponse.json(category);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to create category" }, { status: 500 });
+    return NextResponse.json({ error: "Error fetching category" }, { status: 500 });
   }
-}
-
-export async function GET() {
-  const categories = await prisma.category.findMany();
-  return NextResponse.json(categories);
 }

@@ -66,7 +66,7 @@ export default function Header({
           >
             <Globe size={18} />
             <span className="text-sm uppercase">
-              {lang === 'kh' ? 'ខ្មែរ' : 'EN'}
+              {lang === 'kh' ? 'ខ្មែរ' : 'KH'}
             </span>
           </button>
 
@@ -117,7 +117,7 @@ export default function Header({
               className="flex items-center justify-center gap-2 text-gray-600 font-bold py-4 bg-gray-50 hover:bg-[#B48C00] hover:text-white rounded-2xl"
             >
               <Globe size={20} />
-              {lang === 'en' ? 'ភាសាខ្មែរ' : 'English'}
+              {lang === 'en' ? 'ភាសាខ្មែរ' : 'Khmer'}
             </button>
 
             {/* Login Button */}
