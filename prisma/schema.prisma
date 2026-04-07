@@ -32,6 +32,7 @@ enum Role {
 model Category {
   id       Int       @id @default(autoincrement())
   name     String
+  slug     String    @unique
   products Product[]
 }
 
@@ -83,5 +84,10 @@ model Booking {
   serviceType     String
   status          String   @default("Pending")
   createdAt       DateTime @default(now())
+  foodProductId  Int?
+  foodProduct    Product? @relation("FoodService", fields: [foodProductId], references: [id])
+  
+  tentProductId  Int?
+  tentProduct    Product? @relation("TentService", fields: [tentProductId], references: [id])
 }
 

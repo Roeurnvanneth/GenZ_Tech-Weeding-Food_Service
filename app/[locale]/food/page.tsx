@@ -103,7 +103,7 @@ export default function FoodPage() {
                 <div className="space-y-12">
                     <div className="space-y-6">
                         <h2 className="text-[#B99808] text-3xl font-bold uppercase">{t.both}</h2>
-                       <FilterButtons 
+                    <FilterButtons 
                         activeFilter={filter} 
                         setActiveFilter={setActiveFilter} 
                         t={t} 
