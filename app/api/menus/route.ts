@@ -1,32 +1,7 @@
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { menu_name, price_usd, categoryId } = body;
-
-    // Validation
-    if (!menu_name || !price_usd || !categoryId) {
-      return NextResponse.json({ success: false, message: "សូមបំពេញព័ត៌មានឱ្យគ្រប់គ្រាន់" }, { status: 400 });
-    }
-
-    const newMenu = await prisma.menu.create({
-      data: {
-        menu_name,
-        price_usd: parseFloat(price_usd),
-        price_khr: parseFloat(price_usd) * 4000,
-        categoryId: parseInt(categoryId),
-        status: body.status || "active",
-      },
-    });
-
-    return NextResponse.json({ success: true, data: newMenu }, { status: 201 });
-  } catch (error: any) {
-    console.error("POST Error:", error);
-    return NextResponse.json({ success: false, message: "មិនអាចបង្កើតបានឡើយ" }, { status: 500 });
-  }
-}
+import { prisma } from "@/lib/prisma";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
 
 export async function GET() {
   try {
@@ -36,6 +11,50 @@ export async function GET() {
     });
     return NextResponse.json({ success: true, data: menus });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    // ប្រើ formData ជានិច្ចដើម្បីបញ្ជៀស JSON Syntax Error ពេល Upload File
+    const formData = await req.formData();
+    
+    const menu_name = formData.get("menu_name") as string;
+    const price_usd = parseFloat(formData.get("price_usd") as string) || 0;
+    const categoryId = parseInt(formData.get("categoryId") as string);
+    const status = formData.get("status") as string || "active";
+    const imageFile = formData.get("image") as File | null;
+
+    let fileName = "default-food.jpg"; // តម្លៃដើមតាម Schema
+
+    if (imageFile && typeof imageFile !== "string" && imageFile.size > 0) {
+      const bytes = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      
+      // បង្កើតឈ្មោះ File ថ្មី
+      fileName = `menu_${Date.now()}_${imageFile.name.replace(/\s/g, "_")}`;
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
+      
+      await mkdir(uploadDir, { recursive: true });
+      await writeFile(path.join(uploadDir, fileName), buffer);
+    }
+
+    const newMenu = await prisma.menu.create({
+      data: {
+        menu_name,
+        image: fileName, // ប្រើ Field 'image' តាម Schema របស់អ្នក
+        price_usd: price_usd,
+        price_khr: price_usd * 4100,
+        categoryId: categoryId,
+        status: status,
+      },
+      include: { category: true }
+    });
+
+    return NextResponse.json({ success: true, data: newMenu }, { status: 201 });
+  } catch (error: any) {
+    console.error("POST Error:", error);
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

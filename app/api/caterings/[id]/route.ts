@@ -6,31 +6,37 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   try {
     const id = parseInt(params.id);
     const body = await request.json();
+
+    // បំបែក data ចេញពី menuIds និង eventTypeId
     const { menuIds, eventTypeId, ...otherData } = body;
 
-    const updated = await prisma.catering.update({
+    // លុប field 'id' ចេញពី data ដើម្បីកុំឱ្យ Prisma ច្រឡំថាប្អូនចង់ update primary key
+    if ('id' in otherData) delete (otherData as any).id;
+
+    const updatedCatering = await prisma.catering.update({
       where: { id },
       data: {
         ...otherData,
-        // បើមានការដូរមុខម្ហូប ត្រូវសម្អាតអា舊ចោល រួចដាក់អាថ្មីចូល
-        ...(menuIds && {
-          menuId: menuIds,
+        // បើមានការបញ្ជូន menuIds មក ត្រូវធ្វើការ Update រូបមន្តម្ហូប
+        ...(menuIds && Array.isArray(menuIds) && {
+          menuId: menuIds, // Update field JSON ក្នុង table catering
           items: {
-            deleteMany: {}, // លុបម្ហូបចាស់ៗក្នុងឈុតនេះចេញ
-            create: menuIds.map((mId: number) => ({
+            deleteMany: {}, // ១. លុបម្ហូបចាស់ៗក្នុង table CateringItem ចោលសិន
+            create: menuIds.map((mId: number) => ({ // ២. បង្កើតម្ហូបថ្មីៗចូលវិញ
               menuId: parseInt(mId.toString()),
-              eventTypeId: parseInt(eventTypeId || body.oldEventTypeId)
+              eventTypeId: parseInt(eventTypeId.toString())
             }))
           }
         })
       }
     });
-    return NextResponse.json({ success: true, data: updated });
+
+    return NextResponse.json({ success: true, data: updatedCatering });
   } catch (error: any) {
+    console.error("❌ Update Error:", error.message);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
-
 // 🔴 DELETE: លុប Catering
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {

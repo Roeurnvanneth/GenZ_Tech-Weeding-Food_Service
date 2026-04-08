@@ -1,23 +1,33 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET: ទាញយក Categories ទាំងអស់
 export async function GET() {
   try {
-    const categories = await prisma.category.findMany({ orderBy: { id: 'asc' } });
+    const categories = await prisma.category.findMany({ 
+      orderBy: { id: 'asc' },
+      include: { _count: { select: { menus: true } } } // បន្ថែមដើម្បីដឹងថាមានម្ហូបប៉ុន្មានក្នុង Category នីមួយៗ
+    });
     return NextResponse.json({ success: true, data: categories });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
-// POST: បង្កើត Category ថ្មី
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+
+    // បញ្ហាគឺនៅត្រង់នេះ៖ Prisma ត្រូវការ "name" ជា String ដាច់ខាត
+    // យើងយកឈ្មោះពី translations.kh.name ឬ body.name
+    const categoryName = body.name || body.translations?.kh?.name || body.slug;
+
+    if (!categoryName) {
+      return NextResponse.json({ success: false, error: "សូមបញ្ចូលឈ្មោះប្រភេទ (Name is required)" }, { status: 400 });
+    }
+
     const category = await prisma.category.create({
       data: {
-        name: body.name,
+        name: categoryName, // ដាក់ឈ្មោះដែលយើងទាញបានមិញនេះ
         slug: body.slug,
         description: body.description || "",
         isPoppular: Boolean(body.isPoppular),
@@ -26,6 +36,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ success: true, data: category }, { status: 201 });
   } catch (error: any) {
+    console.error("POST Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 400 });
   }
 }

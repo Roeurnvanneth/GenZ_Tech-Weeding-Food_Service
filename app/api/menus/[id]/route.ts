@@ -1,54 +1,64 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
 
-// ១. កែប្រែ PATCH (Update)
 export async function PATCH(
   request: Request, 
-  { params }: { params: Promise<{ id: string }> } // ប្រាប់ Next.js ថា params ជា Promise
+  { params }: { params: Promise<{ id: string }> } 
 ) {
   try {
-    // បន្ថែម await នៅទីនេះ (ចំណុចដែល error មុននេះ)
     const { id: rawId } = await params; 
     const id = parseInt(rawId);
+    const formData = await request.formData();
+    
+    const menu_name = formData.get("menu_name") as string;
+    const price_usd = parseFloat(formData.get("price_usd") as string);
+    const categoryId = parseInt(formData.get("categoryId") as string);
+    const status = formData.get("status") as string;
+    const imageFile = formData.get("image") as File | null;
 
-    if (isNaN(id)) {
-      return NextResponse.json({ success: false, message: "ID មិនត្រឹមត្រូវ" }, { status: 400 });
+    const oldMenu = await prisma.menu.findUnique({ where: { id } });
+    if (!oldMenu) return NextResponse.json({ success: false, message: "រកមិនឃើញ" }, { status: 404 });
+
+    let fileName = oldMenu.image;
+
+    if (imageFile && typeof imageFile !== "string" && imageFile.size > 0) {
+      const bytes = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      fileName = `menu_${Date.now()}_${imageFile.name.replace(/\s/g, "_")}`;
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
+      await mkdir(uploadDir, { recursive: true });
+      await writeFile(path.join(uploadDir, fileName), buffer);
     }
-
-    const body = await request.json();
 
     const updatedMenu = await prisma.menu.update({
       where: { id },
       data: {
-        menu_name: body.menu_name,
-        price_usd: parseFloat(body.price_usd),
-        price_khr: parseFloat(body.price_usd) * 4100,
-        categoryId: parseInt(body.categoryId),
-        status: body.status,
+        menu_name,
+        price_usd,
+        price_khr: price_usd * 4100,
+        categoryId,
+        status,
+        image: fileName,
       },
     });
 
     return NextResponse.json({ success: true, data: updatedMenu });
   } catch (error: any) {
-    console.error("❌ Update Error:", error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
 
-// ២. កែប្រែ DELETE
 export async function DELETE(
   request: Request, 
-  { params }: { params: Promise<{ id: string }> } // ប្រើ Promise ដូចគ្នា
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: rawId } = await params;
-    const id = parseInt(rawId);
-
-    await prisma.menu.delete({ where: { id } });
-
-    return NextResponse.json({ success: true, message: "លុបបានជោគជ័យ" });
+    await prisma.menu.delete({ where: { id: parseInt(rawId) } });
+    return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("❌ Delete Error:", error);
-    return NextResponse.json({ success: false, message: "មិនអាចលុបបានទេ" }, { status: 500 });
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

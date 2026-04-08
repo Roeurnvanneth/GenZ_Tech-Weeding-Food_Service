@@ -1,4 +1,5 @@
 import "../globals.css";
+import { CartProvider } from '../[locale]/context/CartContext';
 
 // Add 'async' here
 export default async function RootLayout({
@@ -14,7 +15,9 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body className="antialiased" suppressHydrationWarning={true}>
-        {children}
+        <CartProvider>
+            {children}
+        </CartProvider>  
       </body>
     </html>
   );

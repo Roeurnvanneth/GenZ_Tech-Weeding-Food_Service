@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link'; // 1. Import Link for navigation
 
 // Styles
@@ -29,6 +29,15 @@ const imageStyle: React.CSSProperties = {
     transition: 'transform 0.3s ease' // Subtle zoom effect
 };
 
+// 2. Updated Interface to include 'href' (the link)
+interface GalleryProps {
+    images: {
+        src: string;
+        label: string;
+        href: string; // Destination URL
+    }[];
+}
+
 const overlayStyle: React.CSSProperties = {
     position: 'absolute',
     bottom: '0',
@@ -36,17 +45,10 @@ const overlayStyle: React.CSSProperties = {
     background: 'rgba(0,0,0,0.6)',
     color: 'white',
     textAlign: 'center',
-    padding: '10px 0'
+    padding: '10px 0',
+    transition: 'all 0.3s ease',
+    cursor: 'pointer'
 };
-
-// 2. Updated Interface to include 'href' (the link)
-interface GalleryProps {
-    images: { 
-        src: string; 
-        label: string; 
-        href: string; // Destination URL
-    }[];
-}
 
 const FoodGallery: React.FC<GalleryProps> = ({ images }) => {
     return (
