@@ -3,26 +3,35 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
-   // Inside your POST function in app/api/products/route.ts
-const body = await request.json();
+    const body = await request.json();
 
-// 1. Destructure
-const { slug, maxPrice, hallPrice, videoUrl, categoryId, isPoppular, images, translations } = body;
+    // 1. Destructure - Added 'title' here
+    const { 
+      title, 
+      slug, 
+      maxPrice, 
+      hallPrice, 
+      videoUrl, 
+      categoryId, 
+      isPoppular, 
+      images, 
+      translations 
+    } = body;
 
-// 2. Force conversion to numbers and strings
-const product = await prisma.product.create({
-  data: {
-    slug: String(slug),
-    maxPrice: Number(maxPrice) || 0,
-    hallPrice: Number(hallPrice) || 0,
-    videoUrl: videoUrl || null,
-    isPoppular: Boolean(isPoppular),
-    images: Array.isArray(images) ? images : [],
-    translations: translations || {},
-    // 💡 This is the part that was failing:
-    categoryId: Number(categoryId), 
-  },
-});
+    // 2. Create the product
+    const product = await prisma.product.create({
+      data: {
+        title: String(title), // 👈 This was the missing piece
+        slug: String(slug),
+        maxPrice: Number(maxPrice) || 0,
+        hallPrice: Number(hallPrice) || 0,
+        videoUrl: videoUrl || null,
+        isPoppular: Boolean(isPoppular),
+        images: Array.isArray(images) ? images : [],
+        translations: translations || {},
+        categoryId: Number(categoryId), 
+      },
+    });
 
     return NextResponse.json({ success: true, data: product }, { status: 201 });
   } catch (error: any) {
@@ -33,7 +42,6 @@ const product = await prisma.product.create({
     );
   }
 }
-
 
 export async function GET() {
   try {

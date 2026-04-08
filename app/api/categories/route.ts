@@ -3,21 +3,40 @@ import { prisma } from "@/lib/prisma"; // Adjust this path to your prisma client
 
 export async function GET() {
   try {
-    const categories = await prisma.category.findMany({
-      // Sort them by ID so 'ALL' (ID 1) stays at the top
-      orderBy: {
-        id: 'asc',
-      },
-      // Optional: uncomment the line below if you want to load products too
-      // include: { products: true } 
+    const categories = await prisma.category.findMany({ 
+      orderBy: { id: 'asc' },
+      include: { _count: { select: { menus: true } } } // បន្ថែមដើម្បីដឹងថាមានម្ហូបប៉ុន្មានក្នុង Category នីមួយៗ
     });
+    return NextResponse.json({ success: true, data: categories });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
 
-    return NextResponse.json(categories);
-  } catch (error) {
-    console.error("Error fetching categories:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    // បញ្ហាគឺនៅត្រង់នេះ៖ Prisma ត្រូវការ "name" ជា String ដាច់ខាត
+    // យើងយកឈ្មោះពី translations.kh.name ឬ body.name
+    const categoryName = body.name || body.translations?.kh?.name || body.slug;
+
+    if (!categoryName) {
+      return NextResponse.json({ success: false, error: "សូមបញ្ចូលឈ្មោះប្រភេទ (Name is required)" }, { status: 400 });
+    }
+
+    const category = await prisma.category.create({
+      data: {
+        name: categoryName, // ដាក់ឈ្មោះដែលយើងទាញបានមិញនេះ
+        slug: body.slug,
+        description: body.description || "",
+        isPoppular: Boolean(body.isPoppular),
+        translations: body.translations || {},
+      },
+    });
+    return NextResponse.json({ success: true, data: category }, { status: 201 });
+  } catch (error: any) {
+    console.error("POST Error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 400 });
   }
 }

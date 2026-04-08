@@ -1,122 +1,71 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
+    const body = await req.json();
     
-    const { 
-      customerName, phoneNumber, programType, programDate, 
-      programTime, location, guestCount, startDateTime, 
-      endDateTime, contactMethod, foodProductId, tentProductId,
-      lang // 👈 Get language from frontend
-    } = body;
-
-    // --- 1. LANGUAGE MESSAGES ---
-    const isEn = lang === 'en';
-    const msg = {
-      slotTaken: isEn ? "This time slot is already booked." : "ម៉ោងនេះមានគេកក់រួចហើយ សូមជ្រើសរើសម៉ោងផ្សេង",
-      phoneTaken: isEn ? "You already have a booking for this day." : "លេខទូរស័ព្ទនេះបានកក់រួចហើយសម្រាប់ថ្ងៃនេះ",
-      dayFull: isEn ? "Sorry, we are fully booked for this day." : "សុំទោស! ថ្ងៃនេះមានអ្នកកក់ពេញហើយ"
-    };
-
-    // --- 2. PREVENT DUPLICATE SLOT (Same Date + Same Time) ---
-    const existingSlot = await prisma.booking.findFirst({
-      where: {
-        programDate: programDate,
-        programTime: programTime,
+    // ១. ទាញយកម្ហូបពី Catering ដើម្បីគណនាតម្លៃ (Cart Logic)
+    const catering = await prisma.catering.findUnique({
+      where: { id: Number(body.catering_id) },
+      include: {
+        items: {
+          include: {
+            menu: {
+              include: { pricings: { where: { status: "active" }, take: 1 } }
+            }
+          }
+        }
       }
     });
 
-    if (existingSlot) {
-      return NextResponse.json({ success: false, error: msg.slotTaken }, { status: 400 });
+    if (!catering) {
+      return NextResponse.json({ success: false, error: "រកមិនឃើញ Catering ID នេះទេ" }, { status: 404 });
     }
 
-    // --- 3. PREVENT DUPLICATE PHONE ON SAME DAY ---
-    const existingPhone = await prisma.booking.findFirst({
-      where: {
-        phoneNumber: phoneNumber,
-        programDate: programDate,
-      }
+    // ២. គណនាតម្លៃសរុបចេញពីម្ហូបនីមួយៗក្នុងឈុត
+    let calculatedTotal = 0;
+    const bookingItems = catering.items.map(item => {
+      const price = Number(item.menu.pricings[0]?.price_usd || 0);
+      calculatedTotal += price;
+      return { menu_pricing_id: item.menu.pricings[0].id, quantity: 1 };
     });
 
-    if (existingPhone) {
-      return NextResponse.json({ success: false, error: msg.phoneTaken }, { status: 400 });
-    }
-
-    // --- 4. MAX 3 PER DAY CHECK ---
-    const dailyCount = await prisma.booking.count({
-      where: { programDate: programDate }
-    });
-
-    if (dailyCount >= 3) {
-      return NextResponse.json({ success: false, error: msg.dayFull }, { status: 400 });
-    }
-
-    // --- 5. PRICE LOGIC (SAME AS BEFORE) ---
-    let pricePerTable = 0;
-    let selectedServices: string[] = [];
-
-    if (foodProductId) {
-      const food = await prisma.product.findUnique({ where: { id: Number(foodProductId) } });
-      if (food) { pricePerTable += food.price; selectedServices.push("Food"); }
-    }
-
-    if (tentProductId) {
-      const tent = await prisma.product.findUnique({ where: { id: Number(tentProductId) } });
-      if (tent) { pricePerTable += tent.price; selectedServices.push("Tent"); }
-    }
-
-    const totalTables = Number(guestCount) || 0;
-    const finalTotal = pricePerTable * totalTables;
-    const serviceName = selectedServices.join(" & ") || "Standard";
-
-    // --- 6. CREATE BOOKING ---
+    // ៣. បង្កើត Booking
     const newBooking = await prisma.booking.create({
       data: {
-        customerName,
-        phoneNumber,
-        programType,
-        programDate,
-        programTime,
-        location,
-        guestCount: totalTables,
-        startDateTime,
-        endDateTime,
-        contactMethod,
-        hasFood: !!foodProductId,
-        hasTent: !!tentProductId,
-        totalPrice: finalTotal,
-        serviceType: serviceName,
+        customerName: body.customerName,
+        phoneNumber: body.phoneNumber,
+        programType: body.programType,
+        programDate: body.programDate,
+        programTime: body.programTime,
+        event_date: new Date(body.programDate),
+        location: body.location,
+        guestCount: Number(body.guestCount),
+        serviceType: body.serviceType,
+        hasFood: body.hasFood || false,
+        hasTent: body.hasTent || false,
+        totalPrice: calculatedTotal, // តម្លៃដែលបូកអូតូ
         status: "Pending",
-        translations: {
-          en: { service: serviceName, message: "Thank you for booking!" },
-          kh: { service: "សេវាកម្មម្ហូប និងរោង", message: "សូមអរគុណសម្រាប់ការកក់!" }
-        }
-      },
+        catering_id: Number(body.catering_id),
+        bookingItems: { create: bookingItems }
+      }
     });
 
     return NextResponse.json({ success: true, data: newBooking }, { status: 201 });
-
   } catch (error: any) {
-    console.error("DATABASE ERROR:", error);
-    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
 export async function GET() {
   try {
-    const bookings = await prisma.booking.findMany({
-      include: {
-        foodProduct: {
-          include: { category: true } // Get the category of the food
-        },
-        tentProduct: true
-      },
+    const data = await prisma.booking.findMany({
+      include: { catering: true, bookingItems: true },
       orderBy: { createdAt: 'desc' }
     });
-    return NextResponse.json({ success: true, data: bookings });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Fetch failed" });
+    return NextResponse.json({ success: true, data });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

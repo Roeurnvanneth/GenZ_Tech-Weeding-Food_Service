@@ -1,27 +1,36 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
-  CalendarCheck, Users, TrendingUp, 
-  Loader2, Clock, MapPin 
+  CalendarCheck, Users, TrendingUp, Loader2, 
+  Clock, Package, CheckCircle2, XCircle, 
+  LayoutDashboard, Filter, MapPin
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
-  LineChart, Line, XAxis, Tooltip,
-  CartesianGrid
+  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid
 } from 'recharts';
 
-export default function DashboardPage() {
+export default function ProfessionalDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filterMonth, setFilterMonth] = useState("all");
 
+  // ១. ទាញយកទិន្នន័យពី API (កែសម្រួលឱ្យត្រូវជាមួយ Backend ប្អូន)
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/booking");
+      // ប្រើ /api/booking ឱ្យត្រូវជាមួយ Postman របស់ប្អូន
+      const res = await fetch("/api/booking", { cache: 'no-store' }); 
       const json = await res.json();
-      const list = Array.isArray(json) ? json : json.data || [];
-      setBookings(list);
+      
+      console.log("ទិន្នន័យទទួលបាន:", json); // សម្រាប់ឆែកមើលក្នុង Console
+
+      if (json.success) {
+        // បើ Backend បោះមកជា Object តែមួយ យើងបំប្លែងវាទៅជា Array ដើម្បីបង្ហាញក្នុងតារាង
+        const dataReceived = Array.isArray(json.data) ? json.data : [json.data];
+        setBookings(dataReceived);
+      }
     } catch (err) {
       console.error("Dashboard Load Error:", err);
     } finally {
@@ -31,155 +40,173 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchDashboardData(); }, []);
 
-  // --- Logic Calculations ---
-  const totalBookings = bookings.length;
-  const pendingCount = bookings.filter(b => b.status === "Pending").length;
-  const acceptedCount = bookings.filter(b => b.status === "Accepted").length;
-  const rejectedCount = bookings.filter(b => b.status === "Rejected").length;
-  
-  const totalRevenue = bookings
-    .filter(b => b.status === "Accepted")
-    .reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
+  // ២. Logic ចម្រាញ់ទិន្នន័យតាមខែ
+  const filteredData = useMemo(() => {
+    if (filterMonth === "all") return bookings;
+    return bookings.filter(b => {
+      const date = new Date(b.programDate);
+      return (date.getMonth() + 1).toString() === filterMonth;
+    });
+  }, [bookings, filterMonth]);
 
-  // បូកសរុបចំនួនភ្ញៀវទាំងអស់ (មិនមែនចំនួន User ទេ)
-  const totalGuestsSum = bookings.reduce((sum, b) => sum + (Number(b.guestCount) || 0), 0);
+  // ៣. គណនាស្ថិតិសរុប (ផ្អែកលើទិន្នន័យពិតពី Backend)
+  const stats = useMemo(() => {
+    return {
+      total: filteredData.length,
+      pending: filteredData.filter(b => b.status === "Pending" || !b.status).length,
+      revenue: filteredData.reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0),
+      guestSum: filteredData.reduce((sum, b) => sum + (Number(b.guestCount) || 0), 0)
+    };
+  }, [filteredData]);
 
+  // ៤. ទិន្នន័យសម្រាប់ Pie Chart
   const pieData = [
-    { name: 'Accepted', value: acceptedCount, color: '#10b981' },
-    { name: 'Pending', value: pendingCount, color: '#f59e0b' },
-    { name: 'Rejected', value: rejectedCount, color: '#ef4444' },
+    { name: 'យល់ព្រម', value: filteredData.filter(b => b.status === "Accepted").length || 0, color: '#10b981' },
+    { name: 'រង់ចាំ', value: stats.pending, color: '#f59e0b' },
+    { name: 'បដិសេធ', value: filteredData.filter(b => b.status === "Rejected").length || 0, color: '#ef4444' },
   ];
 
-  const stats = [
-    { title: "ការកក់សរុប", value: totalBookings, Icon: CalendarCheck, bg: "bg-blue-100", text: "text-blue-700" },
-    { title: "រង់ចាំពិនិត្យ", value: pendingCount, Icon: Clock, bg: "bg-amber-100", text: "text-amber-700" },
-    { title: "ភ្ញៀវសរុប", value: totalGuestsSum, Icon: Users, bg: "bg-emerald-100", text: "text-emerald-700" },
-    { title: "ចំណូលសរុប", value: `$${totalRevenue.toLocaleString()}`, Icon: TrendingUp, bg: "bg-purple-100", text: "text-purple-700" },
-  ];
+  if (isLoading) return (
+    <div className="h-screen flex flex-col items-center justify-center bg-slate-50 font-khmer text-indigo-600">
+      <Loader2 className="animate-spin mb-2" size={40} />
+      <p className="font-bold">កំពុងទាញទិន្នន័យពី Backend...</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-10 p-8 bg-slate-50 font-khmer min-h-screen">
-      {/* Header */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+    <div className="min-h-screen bg-[#f8f9fa] p-4 lg:p-10 font-khmer">
+      
+      {/* --- Header & Filter --- */}
+      <div className="mb-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">ទិដ្ឋភាពទូទៅ (Admin Overview)</h1>
-          <p className="text-lg text-slate-500 font-medium mt-1">គ្រប់គ្រង និងតាមដានទិន្នន័យការកក់របស់អ្នក</p>
+          <h1 className="text-3xl font-black text-slate-900 flex items-center gap-3">
+            <LayoutDashboard className="text-indigo-600" size={32} /> ផ្ទាំងគ្រប់គ្រងអាជីវកម្ម
+          </h1>
+          <p className="mt-1 text-slate-500 font-medium tracking-tight">ទិន្នន័យពិតពីប្រព័ន្ធគ្រប់គ្រងការកក់</p>
         </div>
-        <button onClick={fetchDashboardData} className="p-4 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-800 transition-all active:scale-95">
-          <Loader2 className={`${isLoading ? "animate-spin" : ""} `} size={28} />
-        </button>
+        
+        <div className="flex items-center gap-3 bg-white p-2 px-4 rounded-2xl shadow-sm border border-slate-200">
+           <Filter size={18} className="text-slate-400" />
+           <select 
+              value={filterMonth} 
+              onChange={(e) => setFilterMonth(e.target.value)}
+              className="outline-none text-sm font-bold bg-transparent text-slate-700 cursor-pointer"
+           >
+              <option value="all">បង្ហាញខែទាំងអស់</option>
+              {[...Array(12)].map((_, i) => (
+                <option key={i} value={i + 1}>ខែ 0{i + 1}</option>
+              ))}
+           </select>
+           <button onClick={fetchDashboardData} className="ml-2 p-1 hover:bg-slate-100 rounded-full transition-colors">
+              <Loader2 size={16} className="text-indigo-600" />
+           </button>
+        </div>
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-md border border-slate-100">
-          <h3 className="text-xl font-bold text-slate-700 mb-6">ស្ថានភាពការកក់</h3>
-          <div className="h-72 relative">
+      {/* --- Section 1: Stats Cards --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <StatCard label="ចំណូលសរុប" value={`$${stats.revenue.toLocaleString()}`} color="bg-emerald-500" icon={<TrendingUp/>}/>
+        <StatCard label="រង់ចាំពិនិត្យ" value={stats.pending} color="bg-amber-500" icon={<Clock/>}/>
+        <StatCard label="ភ្ញៀវសរុប" value={stats.guestSum.toLocaleString()} color="bg-indigo-500" icon={<Users/>}/>
+        <StatCard label="ការកក់សរុប" value={stats.total} color="bg-slate-800" icon={<Package/>}/>
+      </div>
+
+      {/* --- Section 2: Charts --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+        <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+          <h3 className="text-lg font-black text-slate-800 mb-6 italic">និន្នាការចំណូល ($)</h3>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={filteredData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="programDate" tick={{fontSize: 10, fontWeight: 700}} dy={10} />
+                <YAxis tick={{fontSize: 10}} />
+                <Tooltip />
+                <Line type="monotone" dataKey="totalPrice" stroke="#4f46e5" strokeWidth={4} dot={{ r: 6, fill: '#4f46e5' }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col items-center">
+          <h3 className="text-lg font-black text-slate-800 mb-6 text-center">ស្ថានភាពការកក់</h3>
+          <div className="h-64 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={pieData} innerRadius={70} outerRadius={100} paddingAngle={8} dataKey="value">
+                <Pie data={pieData} innerRadius={60} outerRadius={85} paddingAngle={8} dataKey="value">
                   {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-4xl font-black text-slate-900">{totalBookings}</span>
-              <span className="text-sm text-slate-400 font-bold uppercase tracking-widest">សរុប</span>
+              <span className="text-3xl font-black text-slate-900">{stats.total}</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase">សរុប</span>
             </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-md border border-slate-100 lg:col-span-2">
-          <h3 className="text-xl font-bold text-slate-700 mb-6">និន្នាការចំណូល</h3>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={bookings.slice(-10)}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="programDate" tick={{fontSize: 12, fontWeight: 600}} dy={10} />
-                <Tooltip />
-                <Line type="monotone" dataKey="totalPrice" stroke="#3b82f6" strokeWidth={4} dot={{ r: 6, fill: '#3b82f6' }} />
-              </LineChart>
-            </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Stats Cards - Large & Clear */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-8 rounded-[2.5rem] shadow-md border border-slate-100 flex items-center gap-6 transition-transform hover:-translate-y-1">
-            <div className={`p-5 rounded-3xl ${stat.bg} ${stat.text}`}>
-              <stat.Icon size={36} strokeWidth={2.5} />
-            </div>
-            <div>
-              <p className="text-sm font-black text-blue-600 uppercase tracking-widest mb-1">{stat.title}</p>
-              <p className="text-4xl font-black text-slate-900 tracking-tight">{stat.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Table Section - Improved Readability */}
-      <div className="bg-white rounded-[3rem] shadow-xl border border-slate-200 overflow-hidden">
-        <div className="p-10 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h2 className="text-2xl font-black text-slate-800">បញ្ជីការកក់ចុងក្រោយ</h2>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 bg-emerald-500 rounded-full animate-ping"></span>
-            <span className="text-sm font-black text-emerald-600 uppercase tracking-widest">ទិន្នន័យបច្ចុប្បន្ន</span>
-          </div>
+      {/* --- Section 3: Recent Bookings Table --- */}
+      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h2 className="text-xl font-black text-slate-800">បញ្ជីកក់ចុងក្រោយ (Live)</h2>
         </div>
-
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 text-slate-500 text-xs font-black uppercase tracking-[0.2em] border-b border-slate-200">
-                <th className="px-10 py-6 text-center">អតិថិជន</th>
-                <th className="px-10 py-6 text-center">កាលបរិច្ឆេទ</th>
-                <th className="px-10 py-6 text-center">ចំនួននាក់ & តុ</th>
-                <th className="px-10 py-6 text-center">តម្លៃសរុប</th>
-                <th className="px-10 py-6 text-center">ស្ថានភាព</th>
+          <table className="w-full text-left">
+            <thead className="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+              <tr>
+                <th className="px-10 py-5">អតិថិជន</th>
+                <th className="px-10 py-5 text-center">កាលបរិច្ឆេទ & ទីតាំង</th>
+                <th className="px-10 py-5 text-center">ចំនួនតុ</th>
+                <th className="px-10 py-5 text-center">តម្លៃសរុប</th>
+                <th className="px-10 py-5 text-right">ស្ថានភាព</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {bookings.slice(0, 8).map((b) => (
-                <tr key={b.id} className="hover:bg-blue-50/30 transition-colors group">
-                  <td className="px-10 py-8">
-                    <div className="font-black text-slate-900 text-lg group-hover:text-blue-600 transition-colors">{b.customerName}</div>
-                    <div className="text-sm text-slate-400 font-bold mt-1 tracking-wider">{b.phoneNumber}</div>
+              {filteredData.map((b, index) => (
+                <tr key={index} className="hover:bg-indigo-50/20 transition-colors">
+                  <td className="px-10 py-6">
+                    <div className="font-bold text-slate-900">{b.customerName}</div>
+                    <div className="text-xs text-slate-400 font-medium">{b.phoneNumber}</div>
                   </td>
-                  <td className="px-10 py-8 text-center font-bold text-slate-600">
-                    <div className="flex items-center justify-center gap-2 bg-slate-100 py-2 px-4 rounded-xl text-base">
-                      <CalendarCheck size={18} className="text-amber-500"/> {b.programDate}
-                    </div>
+                  <td className="px-10 py-6 text-center">
+                    <div className="text-sm font-bold text-slate-700">{b.programDate}</div>
+                    <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1 uppercase font-bold"><MapPin size={10}/> {b.location}</div>
                   </td>
-                  <td className="px-10 py-8 text-center">
-                    <div className="font-black text-slate-900 text-2xl leading-none">
-                      {Math.ceil((b.guestCount || 0) / 10)} តុ
-                    </div>
-                    <div className="text-xs text-slate-400 font-black mt-2 uppercase tracking-widest bg-slate-50 inline-block px-3 py-1 rounded-md">
-                      {b.guestCount || 0} នាក់
-                    </div>
+                  <td className="px-10 py-6 text-center">
+                    <div className="text-lg font-black text-slate-800">{Math.ceil((b.guestCount || 0) / 10)} តុ</div>
                   </td>
-                  <td className="px-10 py-8 text-center">
-                    <div className="font-black text-emerald-600 text-2xl tracking-tighter">
-                      ${Number(b.totalPrice).toLocaleString()}
-                    </div>
+                  <td className="px-10 py-6 text-center font-black text-emerald-600 text-lg">
+                    ${Number(b.totalPrice).toLocaleString()}
                   </td>
-                  <td className="px-10 py-8 text-center">
-                    <span className={`inline-block px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest border-2 shadow-sm ${
-                      b.status === "Accepted" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
-                      b.status === "Rejected" ? "bg-rose-50 text-rose-700 border-rose-200" :
-                      "bg-amber-50 text-amber-700 border-amber-200"
+                  <td className="px-10 py-6 text-right">
+                    <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase border ${
+                      b.status === "Accepted" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-600 border-amber-100"
                     }`}>
-                      {b.status}
+                      {b.status || "Pending"}
                     </span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {filteredData.length === 0 && <div className="p-20 text-center text-slate-400 font-bold italic">មិនទាន់មានទិន្នន័យ...</div>}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, color, icon }: any) {
+  return (
+    <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-5 transition-transform hover:-translate-y-1">
+      <div className={`p-4 rounded-2xl ${color} text-white shadow-lg shadow-indigo-100`}>
+        {React.cloneElement(icon, { size: 24, strokeWidth: 2.5 })}
+      </div>
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+        <p className="text-2xl font-black text-slate-900 mt-1 tracking-tight">{value}</p>
       </div>
     </div>
   );

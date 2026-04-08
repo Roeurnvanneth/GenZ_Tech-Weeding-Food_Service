@@ -3,45 +3,38 @@ import { prisma } from "@/lib/prisma";
 
 type Props = { params: Promise<{ id: string }> };
 
-// 🟠 PUT: កែប្រែព័ត៌មានផលិតផល
+// PUT: កែប្រែ Product
 export async function PUT(request: Request, { params }: Props) {
   try {
     const { id } = await params;
     const body = await request.json();
-    
     const updated = await prisma.product.update({
       where: { id: Number(id) },
       data: {
+        title: body.title,
         slug: body.slug,
         maxPrice: Number(body.maxPrice),
-        title: body.translations.en || "Untitled", // បន្ថែម Default Title ប្រសិនបើមិនមាន
         hallPrice: Number(body.hallPrice) || 0,
         videoUrl: body.videoUrl,
         categoryId: Number(body.categoryId),
-        images: body.images, // បញ្ជូនជា Array ថ្មី
+        isPoppular: Boolean(body.isPoppular),
+        images: body.images,
         translations: body.translations,
-        isPoppular: body.isPoppular,
       },
     });
-    
-    return NextResponse.json({ success: true, message: "កែប្រែបានជោគជ័យ!", data: updated });
+    return NextResponse.json({ success: true, data: updated });
   } catch (error: any) {
-    console.error("Update Error:", error.message);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message }, { status: 400 });
   }
 }
 
-// 🔴 DELETE: លុបផលិតផល
+// DELETE: លុប Product
 export async function DELETE(request: Request, { params }: Props) {
   try {
     const { id } = await params;
-    
-    await prisma.product.delete({
-      where: { id: Number(id) },
-    });
-    
-    return NextResponse.json({ success: true, message: "លុបផលិតផលបានជោគជ័យ!" });
+    await prisma.product.delete({ where: { id: Number(id) } });
+    return NextResponse.json({ success: true, message: "Deleted successfully" });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: "មិនអាចលុបបានទេ!" }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message }, { status: 400 });
   }
 }

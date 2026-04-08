@@ -1,5 +1,4 @@
 import Sidebar from "../../components/dashboard/Sidebar";
-import Navbar from "../../components/dashboard/Navbar";
 
 export default function DashboardLayout({
   children,
@@ -15,7 +14,7 @@ export default function DashboardLayout({
 
       <div className="flex flex-1 flex-col h-screen overflow-hidden">
         {/* 2. Navbar (Stays at the top) */}
-        <Navbar />
+        {/* <Navbar /> */}
 
         {/* 3. Main Content (Scrollable) */}
         <main className="flex-1 overflow-y-auto p-4 md:p-8">

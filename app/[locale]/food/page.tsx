@@ -1,146 +1,161 @@
 "use client";
 
-import { useState, useEffect } from 'react'; 
-import Link from 'next/link'; // Added this import
-import Header from '../../components/header';
-import { messages, Language } from '../../i18n/messages';
+import React, { useState, use } from 'react'; 
+import Link from 'next/link';
+// ១. ប្រើផ្លូវ Import ផ្ទាល់ដើម្បីជៀសវាង Error "Module not found"
+import Header from '../../components/header'; 
 import FilterButtons from '../../components/filterButtons';
-import Footer from '@/app/components/footer';
+import Footer from '../../components/footer';
+import CartNotification from '../../components/CartNotification'; 
+import { useWeddingData } from '../../hooks/useWeddingData'; // Import ឱ្យត្រូវ Folder
+import { messages, Language } from '../../i18n/messages';
+import { useCart } from '../context/CartContext'; 
+import { ShoppingCart, Users, ChevronRight, Loader2 } from 'lucide-react';
 
-// --- 1. CARD COMPONENT PROPS ---
-interface EventCardProps {
-    image: string[];
-    title: string;
-    provider: string;
-    price: string | number;
-    capacity: string | number;
-    isMultiImage: boolean;
-    t: any;
-    lang: Language;
-}
+// --- CARD COMPONENT ---
+const CardItem = ({ product, t, lang, onAddToCart }: any) => {
+    // ឆែកមើលទិន្នន័យរូបភាព និងចំណងជើងឱ្យបានច្បាស់លាស់
+    const image = Array.isArray(product.images) ? product.images[0] : (product.image || product.images);
+    const title = lang === 'kh' ? (product.translations?.kh?.title || product.menu_name) : (product.translations?.en?.title || product.menu_name);
+    const price = product.maxPrice || product.price_usd || 0;
 
-const CardItem = ({ image, title, provider, price, capacity, isMultiImage, t, lang }: EventCardProps) => {
     return (
-        <div className="max-w-sm bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 flex flex-col h-full transition-all hover:scale-[1.03] hover:shadow-2xl cursor-pointer group">
-            <div className="relative h-48 w-full overflow-hidden bg-gray-200">
-                {isMultiImage && image?.length > 1 ? (
-                    <div className="flex h-full w-full gap-0.5">
-                        <div className="w-1/2 h-full"><img src={image[0]} className="w-full h-full object-cover"/></div>
-                        <div className="w-1/2 h-full"><img src={image[1]} className="w-full h-full object-cover"/></div>
-                    </div>
-                ) : (
-                    <img src={image?.[0] || 'https://via.placeholder.com/400'} className="w-full h-full object-cover" />
-                )}
+        <div className="group bg-white rounded-[2.5rem] p-5 shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-50 flex flex-col h-full">
+            <div className="relative h-56 overflow-hidden rounded-[2rem] mb-5">
+                <img 
+                    src={image || 'https://via.placeholder.com/400'} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-duration-700" 
+                    alt={title}
+                />
+                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-4 py-1 rounded-full shadow-sm">
+                    <span className="text-[#B48C00] font-black text-sm">${Number(price).toFixed(2)}</span>
+                </div>
             </div>
 
-            <div className="p-5 flex flex-col flex-grow text-left">
-                <h3 className="text-gray-900 text-lg font-bold mb-2 group-hover:text-[#B99808] transition-colors">{title}</h3>
-                <p className="text-gray-500 text-xs mb-1">{lang === 'kh' ? 'ដោយ' : 'By'} {provider}</p>
-                <div className="text-[#B8860B] text-2xl font-bold mb-4">${price}</div>
-                <div className="mt-auto">
-                    <div className="w-full py-2 border border-[#B8860B] text-[#B8860B] rounded-md text-sm font-medium text-center group-hover:bg-[#B8860B] group-hover:text-white transition-colors">
-                        {lang === 'kh' ? `សម្រាប់ ${capacity} នាក់` : `For ${capacity} People`}
-                    </div>
+            <div className="flex-grow">
+                <h3 className="text-xl font-black text-black mb-2 uppercase italic line-clamp-1">{title}</h3>
+                <div className="flex items-center gap-2 text-gray-400 mb-6">
+                    <Users size={14} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">
+                        {product.hallPrice || 0} {lang === 'kh' ? 'នាក់' : 'People'}
+                    </span>
                 </div>
+            </div>
+            
+            <div className="flex gap-2">
+                <button 
+                    onClick={() => onAddToCart(product)}
+                    className="flex-1 bg-black text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#B48C00] transition-all flex items-center justify-center gap-2"
+                >
+                    <ShoppingCart size={14} />
+                    {lang === 'kh' ? 'បន្ថែម' : 'Add to Bag'}
+                </button>
+                <Link href={`/${lang}/food/${product.slug}`} className="w-12 h-12 bg-gray-50 flex items-center justify-center rounded-2xl text-gray-300 hover:text-black transition-all">
+                    <ChevronRight size={20} />
+                </Link>
             </div>
         </div>
     );
 };
 
-export default function FoodPage() {
-    const [lang, setLang] = useState<Language>('en');
-    const [filter, setActiveFilter] = useState<'all' | 'factory' | 'food' | 'both'>('all');
-    const [products, setProducts] = useState<any[]>([]); 
-    const [loading, setLoading] = useState(true); 
+// --- MAIN PAGE ---
+export default function FoodPage({ params }: { params: Promise<{ locale: string }> }) {
+    const resolvedParams = use(params);
+    const lang = resolvedParams.locale as Language;
+    const t = messages[lang] || messages['en'];
 
-    const t = messages[lang];
-    const toggleLang = () => setLang(prev => (prev === 'en' ? 'kh' : 'en'));
+    // ២. ទាញទិន្នន័យតាមរយៈ Hook (Professional Step)
+    const { categories, products, loading, error } = useWeddingData();
 
-    useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const response = await fetch('/api/products');
-                const result = await response.json();
-                if (result.success) {
-                    setProducts(result.data);
-                }
-            } catch (error) {
-                console.error("Failed to fetch products:", error);
-            } finally {
-                setLoading(false);
-            }
+    const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');
+    const [isNotifyOpen, setIsNotifyOpen] = useState(false);
+    const [lastAddedProduct, setLastAddedProduct] = useState<any>(null);
+
+    const { addToCart, totalItems } = useCart();
+
+    const handleAddToCart = (product: any) => {
+        const item = {
+            id: product.id,
+            menu_name: lang === 'kh' ? (product.translations?.kh?.title || product.menu_name) : (product.translations?.en?.title || product.menu_name),
+            price_usd: product.maxPrice || product.price_usd || 0,
+            image: Array.isArray(product.images) ? product.images[0] : (product.image || product.images)
         };
-        fetchProducts();
-    }, []);
+        addToCart(item); 
+        setLastAddedProduct(item); 
+        setIsNotifyOpen(true); 
+    };
 
-    const filteredCards = products.filter((card) => {
-    // If we select 'all', show everything
-    if (filter === 'all') return true;
+    // ៣. Filter ម្ហូប (ប្រើ Number() ដើម្បីធានាថា ID ត្រូវគ្នាជាមួយ API)
+    const filteredCards = activeCategory === 'all' 
+        ? products 
+        : products.filter((p: any) => Number(p.categoryId) === Number(activeCategory));
 
-    // Convert categoryId to number just in case it comes as a string
-    const catId = Number(card.categoryId);
-
-    if (filter === 'factory') return catId === 2;
-    if (filter === 'food') return catId === 3;
-    if (filter === 'both') return catId === 4;
-
-    return false;
-});
-
+    if (loading) return (
+        <div className="h-screen flex flex-col items-center justify-center">
+            <Loader2 className="w-12 h-12 text-[#B48C00] animate-spin" />
+            <p className="mt-4 font-black text-gray-400 italic">LOADING DATA...</p>
+        </div>
+    );
 
     return (
-        <div className={`min-h-screen bg-gray-50 ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
-            <Header lang={lang} toggleLang={toggleLang} isMenuOpen={false} setIsMenuOpen={() => {}} user={null} />
+        <div className={`min-h-screen bg-[#FDFDFD] ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
+            <CartNotification 
+                isOpen={isNotifyOpen}
+                onClose={() => setIsNotifyOpen(false)}
+                product={lastAddedProduct}
+                lang={lang}
+                totalItems={totalItems}
+            />
 
-            <section className="relative h-[400px] flex items-center justify-center">
-                <img src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2000" className="absolute inset-0 w-full h-full object-cover brightness-50" alt="Hero" />
-                <div className="relative z-10 text-center">
-                    <h1 className="text-white text-4xl md:text-5xl font-bold uppercase tracking-widest">{t.food} & {t.factory}</h1>
-                </div>
-            </section>
+            <Header lang={lang} toggleLang={() => {}} isMenuOpen={false} setIsMenuOpen={() => {}} />
 
             <main className="max-w-7xl mx-auto px-6 py-16">
-                <div className="space-y-12">
-                    <div className="space-y-6">
-                        <h2 className="text-[#B99808] text-3xl font-bold uppercase">{t.both}</h2>
-                    <FilterButtons 
-                        activeFilter={filter} 
-                        setActiveFilter={setActiveFilter} 
-                        t={t} 
-                    />
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-gray-100 pb-8">
+                    <div className="border-l-4 border-[#B48C00] pl-4">
+                        <h2 className="text-2xl font-black text-black uppercase italic">Categories</h2>
+                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Filter by your preference</p>
+                    </div>
+                    
+                    {/* ប៊ូតុង Filter យកតាម Category ពី API */}
+                    <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                        <button 
+                            onClick={() => setActiveCategory('all')}
+                            className={`px-8 py-2.5 rounded-full font-black text-[10px] uppercase transition-all ${activeCategory === 'all' ? 'bg-black text-white' : 'bg-gray-100 text-gray-400'}`}
+                        >
+                            All Menu
+                        </button>
+                        {categories.map((cat: any) => (
+                            <button 
+                                key={cat.id}
+                                onClick={() => setActiveCategory(cat.id)}
+                                className={`px-8 py-2.5 rounded-full font-black text-[10px] uppercase whitespace-nowrap transition-all ${activeCategory === cat.id ? 'bg-[#B48C00] text-white' : 'bg-gray-100 text-gray-400'}`}
+                            >
+                                {lang === 'kh' ? (cat.name_kh || cat.name) : cat.name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                {loading ? (
-                    <div className="text-center py-20 text-gray-500">Loading products...</div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                        {filteredCards.length > 0 ? (
-                            filteredCards.map((product) => (
-                                <Link 
-                                    key={product.id} 
-                                    href={`/${lang}/food/${product.slug}`}
-                                >
-                                    <CardItem
-                                        image={Array.isArray(product.images) ? product.images : [product.images]}
-                                        title={lang === 'kh' ? product.translations?.kh?.title : product.translations?.en?.title}
-                                        provider={t.from}
-                                        price={product.maxPrice}
-                                        capacity={product.hallPrice} 
-                                        isMultiImage={product.images?.length > 1}
-                                        t={t}
-                                        lang={lang}
-                                    />
-                                </Link>
-                            ))
-                        ) : (
-                            <div className="col-span-full text-center py-20 text-gray-400">
-                                No items found for this category.
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
+                {/* ការបង្ហាញកាតម្ហូប */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {filteredCards.length > 0 ? (
+                        filteredCards.map((product: any) => (
+                            <CardItem
+                                key={product.id}
+                                product={product}
+                                t={t}
+                                lang={lang}
+                                onAddToCart={handleAddToCart}
+                            />
+                        ))
+                    ) : (
+                        <div className="col-span-full py-32 text-center border-2 border-dashed border-gray-100 rounded-[3rem]">
+                            <p className="text-gray-300 font-black italic text-xl uppercase italic">No Products Found</p>
+                        </div>
+                    )}
+                </div>
             </main>
+
             <Footer t={t} lang={lang} />
         </div>
     );
