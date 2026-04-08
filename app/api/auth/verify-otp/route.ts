@@ -1,41 +1,41 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    // 1. Get body
-    const body = await req.json();
-    const { phone, otp } = body;
+    const { phone,otp } = await req.json();
 
-    // 2. Validate input
-    if (!phone || !otp) {
-      return NextResponse.json(
-        { error: "Phone and OTP required" },
-        { status: 400 }
-      );
+    // ១. ស្វែងរក User ក្នុង Database
+    const user = await prisma.user.findUnique({ where: { phone } });
+
+    if (!user) {
+      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    // 3. TODO: Verify OTP (compare with DB or in-memory store)
-    // const validOtp = await prisma.otp.findUnique({ where: { phone } });
-    // if (!validOtp || validOtp.otp !== otp) {
-    //   return NextResponse.json({ error: "Invalid OTP" }, { status: 401 });
-    // }
-
-    // 4. For testing, we assume OTP is always valid
-
-    // 5. Return success
-    return NextResponse.json({
-      message: "OTP verified successfully",
-      phone,
+    // ២. បង្កើត Response
+    const response = NextResponse.json({
+      success: true,
+      role: user.role, // នឹងបោះតម្លៃ "ADMIN"
+      user
     });
 
-  } catch (error) { 
-    console.error(error);
-    return NextResponse.json(
-      { error: "Server error" },
-      { status: 500 }
-    );
+    // ៣. CRITICAL: Set Cookies ឱ្យ Middleware ស្គាល់
+    // បើគ្មាន Token ទេ Middleware នឹងគិតថាអ្នកមិនទាន់ Login
+    response.cookies.set("token", "your_jwt_session_token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+    });
+
+    // បើគ្មាន user_role ទេ Middleware នឹងរុញទៅទំព័រ Home
+    response.cookies.set("user_role", user.role, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
+  } catch (error) {
+    return NextResponse.json({ success: false, error: "Server Error" }, { status: 500 });
   }
 }
- 
-
-

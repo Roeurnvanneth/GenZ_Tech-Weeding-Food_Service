@@ -7,19 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- USER MANAGEMENT ---
 model User {
-  id            Int       @id @default(autoincrement())
-  name          String?
-  phone         String    @unique
-  role          Role      @default(USER)
-
-  otpCode       String?
-  otpExpiry     DateTime?
-
-  refreshToken  String?
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           Int       @id @default(autoincrement())
+  name         String?
+  phone        String    @unique
+  role         Role      @default(USER)
+  otpCode      String?
+  otpExpiry    DateTime?
+  refreshToken String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  bookings     Booking[] // ភ្ជាប់ទៅកាន់ការកក់របស់ User ម្នាក់ៗ
 }
 
 enum Role {
@@ -27,65 +26,184 @@ enum Role {
   USER
 }
 
-
-
+// --- PRODUCT & CATEGORY ---
 model Category {
-  id           Int    @id @default(autoincrement())
-  slug         String  @unique
-  isPoppular    Boolean @default(false)
+  id           Int       @id @default(autoincrement())
+  description  String?
+  name         String
+  slug         String    @unique
+  isPoppular   Boolean   @default(false)
   translations Json
-  createdAt    DateTime @default(now())
-  updatedAt DateTime @updatedAt
   products     Product[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
+  menus Menu[]
 }
 
 model Product {
   id           Int      @id @default(autoincrement())
+  title        String
+  price        Float    @default(0)
   slug         String   @unique
-  price        Float
-  isPoppular    Boolean  @default(false)
-  videoUrl     String?   // Added for the Product Detail video
-  images      String[] // or Json, depending on your setup
-  translations Json     // Make sure this is 'Json' and matches your POST body
+  maxPrice     Float    @default(0)
+  hallPrice    Float    @default(0)
+  isPoppular   Boolean  @default(false)
+  videoUrl     String?
+  images       Json
+  translations Json
   categoryId   Int
   category     Category @relation(fields: [categoryId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  
 }
-
 
 model TeamMember {
   id           Int      @id @default(autoincrement())
-  slug         String       @unique
-  image        String       // Image URL for the team member photo
-  translations Json         // { en: { name, role }, km: { name, role } }
+  slug         String   @unique
+  image        String
+  translations Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// --- BOOKING SYSTEM ---
+model Booking {
+  id           Int    @id @default(autoincrement())
+  // ព័ត៌មានអតិថិជន
+  customerName String
+  phoneNumber  String
+  userId       Int? // ភ្ជាប់ទៅ User Table (Optional)
+  user         User?  @relation(fields: [userId], references: [id])
+
+  // ព័ត៌មានកម្មវិធី
+  programType   String
+  programDate   String
+  programTime   String?
+  startDateTime String?
+  endDateTime   String?
+  event_date    DateTime // សម្រាប់ Sort តាម Calendar ក្នុង Backend
+
+  // ទីតាំង និង ចំនួនភ្ញៀវ
+  location      String
+  guestCount    Int
+  contactMethod String?
+
+  // សេវាកម្មបន្ថែម
+  hasFood     Boolean @default(false)
+  hasTent     Boolean @default(false)
+  serviceType String
+
+  // ផ្នែកតម្លៃ និង ការទូទាត់
+  totalPrice Decimal @db.Decimal(10, 2)
+  status     String  @default("Pending") // Pending, Confirmed, Cancelled
+
+  // ទំនាក់ទំនងជាមួយ Catering
+  catering_id  Int?
+  catering     Catering?     @relation(fields: [catering_id], references: [id])
+  bookingItems BookingItem[]
+
+  translations Json? // { kh: { name }, en: { name } }
+  createdAt    DateTime @default(now())
+}
+
+// --- CATERING & MENU SYSTEM ---
+model EventType {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  // នេះជាអ្វីដែលប្អូនមានរួចហើយ
+  cateringItems CateringItem[]
+
+  // ប្រសិនបើប្អូនចង់ឱ្យ Catering ផ្ទាល់ភ្ជាប់ទៅ EventType ដែរ (Optional)
+  caterings Catering[]
+}
+
+model Menu {
+  id        Int     @id @default(autoincrement())
+  menu_name String
+  image     String? @default("default-food.jpg")
+  price_usd Decimal @default(0) @db.Decimal(10, 2)
+  price_khr Decimal @default(0) @db.Decimal(10, 2)
+  status    String  @default("active")
+
+  // ការតភ្ជាប់ទៅ Category
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  // Relations
+  pricings      MenuPricing[]
+  cateringItems CateringItem[] // ម្ហូបមួយមុខ អាចនៅក្នុង Catering ច្រើន
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+// --- CATERING & EVENT SYSTEM ---
 
-model Booking {
-  id              Int      @id @default(autoincrement())
-  customerName    String
-  phoneNumber     String
-  programType     String   
-  programDate     String   
-  // ADD THESE MISSING FIELDS BELOW:
-  programTime     String?   // Added
-  startDateTime   String?   // Added
-  endDateTime     String?   // Added
-  contactMethod   String?   // Added
-  translations Json       // { kh: { name }, en: { name } }
-  // -------------------------
-  location        String
-  guestCount      Int      
-  hasFood         Boolean  @default(false)
-  hasTent         Boolean  @default(false)
-  totalPrice      Float    
-  serviceType     String   
-  status          String   @default("Pending")
-  createdAt       DateTime @default(now())
+model MenuPricing {
+  id             Int           @id @default(autoincrement())
+  menu_id        Int
+  price_usd      Decimal       @db.Decimal(10, 2)
+  price_khr      Decimal       @db.Decimal(10, 2)
+  status         String        @default("active")
+  effective_from DateTime      @default(now())
+  menu           Menu          @relation(fields: [menu_id], references: [id], onDelete: Cascade)
+  bookingItems   BookingItem[]
 }
 
+model CateringStandard {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  caterings Catering[]
+}
+
+model Catering {
+  catering_name   String           // <--- បើវាអត់មានបន្ទាត់នេះទេ គឺប្រើវាមិនបានឡើយ
+  event_name        String           // <--- បើវាអត់មានបន្ទាត់នេះទេ គឺប្រើវាមិនបានឡើយ
+  id          Int     @id @default(autoincrement())
+  name        String // ឈ្មោះឈុត ឧទាហរណ៍: "Wedding Gold Package"
+  description String?
+  total_price Decimal @db.Decimal(10, 2)
+  menuId     Json    // [1, 2, 3] - List of Menu IDs in this Catering Set
+
+  // តភ្ជាប់ទៅ Standard (Gold, Silver...)
+  catering_standard_id Int
+  standard             CateringStandard @relation(fields: [catering_standard_id], references: [id])
+
+  // តភ្ជាប់ទៅ EventType (Wedding, Funeral...)
+  eventTypeId Int
+  eventType   EventType @relation(fields: [eventTypeId], references: [id])
+
+  // បញ្ជីម្ហូបក្នុងឈុតនេះ
+  items    CateringItem[]
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CateringItem {
+  id           Int      @id @default(autoincrement())
+  
+  cateringId   Int      // ប្រើ camelCase ឱ្យដូចក្នុងកូដ
+  catering     Catering @relation(fields: [cateringId], references: [id], onDelete: Cascade)
+
+  menuId       Int      // ប្រើ camelCase ឱ្យដូចក្នុងកូដ
+  menu         Menu     @relation(fields: [menuId], references: [id])
+
+  eventTypeId  Int
+  eventType    EventType @relation(fields: [eventTypeId], references: [id])
+
+  @@unique([cateringId, menuId])
+}
+model BookingItem {
+  id              Int         @id @default(autoincrement())
+  booking_id      Int
+  menu_pricing_id Int
+  quantity        Int         @default(1)
+  booking         Booking     @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  menuPricing     MenuPricing @relation(fields: [menu_pricing_id], references: [id])
+
+  // បើប្អូនចង់ឱ្យភ្ញៀវកុម្ម៉ង់ម្ហូបបន្ថែមក្រៅពីឈុត ក៏ប្រើ Table នេះបានដែរ
+}

@@ -1,70 +1,54 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-
-// 🔍 SHARED VALIDATOR
-function validateTranslations(translations: any) {
-  if (!translations || typeof translations !== "object") return "Translations must be an object";
-  if (!translations.kh || !translations.en) return "Must include 'kh' and 'en'";
-  return null;
-}
-
-// 🔵 GET ONE BY ID
-export async function GET() {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const categories = await prisma.category.findMany();
-    return NextResponse.json({ success: true, data: categories });
+    const { id } = await params;
+    const category = await prisma.category.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!category) return NextResponse.json({ error: "រកមិនឃើញ" }, { status: 404 });
+    return NextResponse.json(category);
   } catch (error) {
-    return NextResponse.json({ success: false, error: "Fetch failed" }, { status: 500 });
+    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> } // 1. Change type to Promise
-) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // 2. UNWRAP THE PARAMS (This fixes your error)
-    const { id: rawId } = await params; 
-    
-    console.log("Updating Category ID:", rawId); 
-    const id = Number(rawId);
+    const { id } = await params;
+    const body = await req.json();
 
-    if (isNaN(id)) {
-      return NextResponse.json({ success: false, error: "Invalid ID format" }, { status: 400 });
-    }
+    // ទាញយក Name ឱ្យ Prisma ដូចគ្នា កុំឱ្យវា Error ពេល Update
+    const categoryName = body.name || body.translations?.kh?.name;
 
-    const body = await request.json();
-    const { slug, translations } = body;
-
-    // 3. Perform Update
-    const updated = await prisma.category.update({
-      where: { id },
-      data: { slug, translations },
+    const updatedCategory = await prisma.category.update({
+      where: { id: Number(id) },
+      data: {
+        name: categoryName,
+        slug: body.slug,
+        description: body.description,
+        isPoppular: body.isPoppular,
+        translations: body.translations,
+      },
     });
 
-    return NextResponse.json({ success: true, data: updated });
-
-  } catch (error) {
-    console.error("Update Error:", error);
-    return NextResponse.json({ 
-      success: false, message: "Update failed",
-      error: "Update failed", 
-      details: error instanceof Error ? error.message : "Error" 
-    }, { status: 500 });
+    return NextResponse.json({ success: true, data: updatedCategory });
+  } catch (error: any) {
+    console.error("PUT Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-// 🔴 ALSO UPDATE YOUR DELETE FUNCTION THE SAME WAY
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await prisma.category.delete({ where: { id: Number(id) } });
-    return NextResponse.json({ success: true, message: "Deleted Successfully" });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Delete failed" }, { status: 500 });
+    const { id } = await params;
+    await prisma.category.delete({
+      where: { id: Number(id) },
+    });
+    return NextResponse.json({ success: true, message: "លុបបានជោគជ័យ" });
+  } catch (error: any) {
+    // បើលុបមិនចេញ ប្រហែលមកពីមាន ម្ហូប (Menus) កំពុងប្រើ Category ហ្នឹង
+    return NextResponse.json({ error: "មិនអាចលុបបានទេ! សូមលុបមុខម្ហូបក្នុងប្រភេទនេះចេញសិន។" }, { status: 500 });
   }
 }
