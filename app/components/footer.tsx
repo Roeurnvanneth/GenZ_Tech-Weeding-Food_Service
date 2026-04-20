@@ -43,7 +43,7 @@ export default function Footer({ lang }: FooterProps) {
                             {t?.nav?.map((item: { label: string; path: string }) => (
                                 <Link 
                                     key={item.label} 
-                                    href={`/${lang}${item.path}`} 
+                                    href={`/${lang}/${item.path}`}
                                     className="text-gray-400 hover:text-white transition-colors text-sm font-medium"
                                 >
                                     {item.label}
@@ -65,7 +65,9 @@ export default function Footer({ lang }: FooterProps) {
                                 <p className="leading-relaxed">{t.location}</p>
                             </div>
                             <div className="flex items-center gap-3">
+                               <a href="tel:0967932352">
                                 <Phone size={18} className="text-[#B99808]" /> 
+                                </a>
                                 <p>096 793 2352</p>
                             </div>
                         </div>

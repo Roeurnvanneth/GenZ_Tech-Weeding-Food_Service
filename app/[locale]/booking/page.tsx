@@ -10,7 +10,7 @@ const PRICE_PER_FOOD = 150;
 const PRICE_PER_TENT = 50;
 
 export default function BookingPage() {
-    const [lang, setLang] = useState<Language>('kh');
+    const [lang, setLang] = useState<Language>('en');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
