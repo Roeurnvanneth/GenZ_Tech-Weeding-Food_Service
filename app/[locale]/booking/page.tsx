@@ -23,10 +23,10 @@ export default function BookingPage() {
         time: "",
         location: "",
         method: "Phone",
-        programType: "Wedding", 
-        guestCount: 10,       
-        foodProductId: "1",    
-        tentProductId: "5"     
+        programType: "Wedding",
+        guestCount: 10,
+        foodProductId: "1",
+        tentProductId: "5"
     });
 
     const t = messages[lang];
