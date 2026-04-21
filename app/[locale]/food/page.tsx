@@ -156,7 +156,7 @@ export default function FoodPage({ params }: { params: Promise<{ locale: string 
                 </div>
             </main>
 
-            <Footer t={t} lang={lang} />
+            <Footer lang={'en'} />
         </div>
     );
 }

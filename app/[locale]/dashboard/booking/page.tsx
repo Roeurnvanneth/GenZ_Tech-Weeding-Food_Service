@@ -1,19 +1,23 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, use } from "react";
+import BookingDetailModal from "@/app/components/dashboard/BookingDetailModal";
 import { 
   Search, CheckCircle, XCircle, Trash2, 
   Loader2, Calendar, Users, MapPin, 
-  Phone, Banknote, Table, AlertCircle, Clock, Filter
+  Phone, AlertCircle, Clock, Filter
 } from "lucide-react";
 
-export default function ProfessionalBookingDashboard() {
+export default function ProfessionalBookingDashboard({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = use(params);
+
   const [bookings, setBookings] = useState<any[]>([]);
   const [filtered, setFiltered] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   // --- ១. មុខងារទាញទិន្នន័យ (Fetch Real API) ---
   const fetchBookings = useCallback(async () => {
@@ -43,7 +47,6 @@ export default function ProfessionalBookingDashboard() {
       const searchStr = `${b.customerName} ${b.phoneNumber} ${b.location}`.toLowerCase();
       return searchStr.includes(search.toLowerCase());
     });
-
     if (statusFilter !== "All") {
       result = result.filter((b) => b.status === statusFilter);
     }
@@ -77,7 +80,7 @@ export default function ProfessionalBookingDashboard() {
 
   return (
     <div className="p-8 space-y-8 bg-[#F8FAFC] min-h-screen font-khmer animate-in fade-in duration-500">
-      
+
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
         <div>
@@ -95,8 +98,8 @@ export default function ProfessionalBookingDashboard() {
       <div className="flex flex-col lg:flex-row gap-4 items-center">
         <div className="relative flex-1 w-full group">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#B48C00] transition-colors" size={22} />
-          <input 
-            placeholder="ស្វែងរកតាមឈ្មោះ លេខទូរស័ព្ទ ឬទីតាំង..." 
+          <input
+            placeholder="ស្វែងរកតាមឈ្មោះ លេខទូរស័ព្ទ ឬទីតាំង..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-16 pr-8 py-5 bg-white border border-slate-200 rounded-[1.8rem] text-lg font-bold outline-none focus:border-[#B48C00] focus:ring-4 focus:ring-[#B48C00]/5 shadow-sm transition-all"
@@ -126,8 +129,8 @@ export default function ProfessionalBookingDashboard() {
           </div>
         ) : error ? (
           <div className="p-40 text-center text-rose-500">
-             <AlertCircle className="mx-auto mb-4" size={50} />
-             <p className="font-black">{error}</p>
+            <AlertCircle className="mx-auto mb-4" size={50} />
+            <p className="font-black">{error}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -143,7 +146,11 @@ export default function ProfessionalBookingDashboard() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filtered.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-50/30 transition-all group">
+                  <tr
+                    key={b.id}
+                    onClick={() => setSelectedBooking(b)}
+                    className="hover:bg-slate-50/30 transition-all group cursor-pointer"
+                  >
                     <td className="px-10 py-6">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-[#B48C00]/10 flex items-center justify-center text-[#B48C00] font-black text-xl">
@@ -160,7 +167,7 @@ export default function ProfessionalBookingDashboard() {
                       <div className="flex items-center gap-2 text-xs text-slate-400 font-bold"><MapPin size={14}/> {b.location}</div>
                     </td>
                     <td className="px-10 py-6 text-center">
-                      <div className="font-black text-slate-800 flex items-center justify-center gap-1"><Users size={16} className="text-[#B48C00]"/> {Math.ceil(b.guestCount/10)} តុ</div>
+                      <div className="font-black text-slate-800 flex items-center justify-center gap-1"><Users size={16} className="text-[#B48C00]"/> {Math.ceil(b.guestCount / 10)} តុ</div>
                       <div className="text-xl font-black text-emerald-600 tracking-tighter mt-1">${Number(b.totalPrice).toLocaleString()}</div>
                     </td>
                     <td className="px-10 py-6 text-center">
@@ -170,11 +177,26 @@ export default function ProfessionalBookingDashboard() {
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                         {b.status === "Pending" && (
                           <>
-                            <button onClick={() => updateStatus(b.id, "Accepted")} className="p-3 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl transition-all shadow-sm"><CheckCircle size={20}/></button>
-                            <button onClick={() => updateStatus(b.id, "Rejected")} className="p-3 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-xl transition-all shadow-sm"><XCircle size={20}/></button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); updateStatus(b.id, "Accepted"); }}
+                              className="p-3 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl transition-all shadow-sm"
+                            >
+                              <CheckCircle size={20}/>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); updateStatus(b.id, "Rejected"); }}
+                              className="p-3 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-xl transition-all shadow-sm"
+                            >
+                              <XCircle size={20}/>
+                            </button>
                           </>
                         )}
-                        <button onClick={() => deleteBooking(b.id)} className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"><Trash2 size={20}/></button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteBooking(b.id); }}
+                          className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                        >
+                          <Trash2 size={20}/>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -184,6 +206,14 @@ export default function ProfessionalBookingDashboard() {
           </div>
         )}
       </div>
+
+      {/* MODAL */}
+      {selectedBooking && (
+        <BookingDetailModal
+          booking={selectedBooking}
+          onClose={() => setSelectedBooking(null)}
+        />
+      )}
     </div>
   );
 }
@@ -206,7 +236,7 @@ function StatusBadge({ status }: { status: string }) {
   const config: any = {
     "Accepted": { bg: "bg-emerald-50", text: "text-emerald-600", icon: <CheckCircle size={12}/>, kh: "យល់ព្រម" },
     "Rejected": { bg: "bg-rose-50", text: "text-rose-600", icon: <XCircle size={12}/>, kh: "បដិសេធ" },
-    "Pending": { bg: "bg-amber-50", text: "text-amber-600", icon: <Clock size={12}/>, kh: "រង់ចាំ" }
+    "Pending":  { bg: "bg-amber-50",  text: "text-amber-600",  icon: <Clock size={12}/>,      kh: "រង់ចាំ"  }
   };
   const s = config[status] || config.Pending;
   return (
