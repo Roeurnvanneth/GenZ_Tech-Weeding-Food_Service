@@ -65,10 +65,12 @@ export default function Footer({ lang }: FooterProps) {
                                 <p className="leading-relaxed">{t.location}</p>
                             </div>
                             <div className="flex items-center gap-3">
-                               <a href="tel:0967932352">
+                            <a href="tel:0967932352">
                                 <Phone size={18} className="text-[#B99808]" /> 
-                                </a>
+                            </a>
+                            <a href="tel:0967932352">
                                 <p>096 793 2352</p>
+                            </a>
                             </div>
                         </div>
                     </div>

@@ -10,7 +10,7 @@ const PRICE_PER_FOOD = 150;
 const PRICE_PER_TENT = 50;
 
 export default function BookingPage() {
-    const [lang, setLang] = useState<Language>('en');
+    const [lang, setLang] = useState<Language>('kh');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -92,8 +92,12 @@ export default function BookingPage() {
 
     return (
         <div className={`min-h-screen bg-white ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
-            <Header lang={lang} toggleLang={toggleLang} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} user={null} />
-
+            <Header
+                lang={lang}
+                toggleLang={toggleLang}
+                isMenuOpen={isMenuOpen}
+                setIsMenuOpen={setIsMenuOpen}
+            />
             <section className="relative h-[250px] md:h-[350px] flex items-center justify-center">
                 <img src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2000" className="absolute inset-0 w-full h-full object-cover brightness-50" alt="Hero" />
                 <div className="relative z-10 text-center">

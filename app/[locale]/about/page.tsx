@@ -9,7 +9,7 @@ import { Menbere } from 'next/font/google';
 import Footer from '@/app/components/footer';
 
 export default function AboutPage() {
-    const [lang, setLang] = useState<Language>('en');
+    const [lang, setLang] = useState<Language>('kh');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const t = messages[lang];
 
@@ -42,14 +42,7 @@ export default function AboutPage() {
 
     return (
         <div className={`min-h-screen bg-white text-[#333333] ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
-            <Header
-                lang={lang}
-                toggleLang={toggleLang}
-                isMenuOpen={isMenuOpen}
-                setIsMenuOpen={setIsMenuOpen} 
-                user={null} 
-            />
-
+                <Header lang={lang} toggleLang={toggleLang} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
             {/* Hero Banner */}
             <section className="relative h-[400px] flex items-center justify-center pt-20">
                 <div className="absolute inset-0 z-0">

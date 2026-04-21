@@ -9,7 +9,7 @@ import FoodGallery from '@/app/components/card';
 import Footer from '@/app/components/footer';
 
 export default function HomePage() {
-  const [lang, setLang] = useState<Language>('en');
+  const [lang, setLang] = useState<Language>('kh'); // Default to Khmer, change to 'en' for English
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   // --- បន្ថែម State សម្រាប់រក្សាទុកទិន្នន័យ User ---
@@ -55,16 +55,7 @@ export default function HomePage() {
 
   return (
     <div className={`min-h-screen bg-white text-white ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
-      
-      {/* 1. HEADER WITH DYNAMIC PROFILE/LOGIN */}
-      <Header
-        lang={lang}
-        toggleLang={toggleLang}
-        isMenuOpen={isMenuOpen}
-        setIsMenuOpen={setIsMenuOpen}
-        user={user} // បោះ user ទៅឱ្យ Header ដើម្បីបង្ហាញ Profile
-      />
-
+        <Header lang={lang} toggleLang={toggleLang} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
       {/* --- Hero Section --- */}
       <header className="relative min-h-[500px] flex items-center pt-20 pb-10 px-6">
         <div className="absolute inset-0 z-0">
@@ -80,9 +71,12 @@ export default function HomePage() {
             <h1 className="text-2xl md:text-5xl lg:text-3xl font-extrabold leading-tight">
               {t.heroSub}
             </h1>
-            <button className="border-2 border-[#B99808] text-white px-10 py-3 font-bold hover:bg-[#B99808] bg-[#2d1212]/50 hover:text-white transition-all uppercase text-sm">
+            <a 
+              href={`/${lang}/booking`}
+              className="border-2 border-[#B99808] text-white px-10 py-3 font-bold hover:bg-[#B99808] bg-[#2d1212]/50 hover:text-white transition-all uppercase text-sm"
+            >
               {t.btnMore}
-            </button>
+            </a>
           </div>
 
           {/* <div className="hidden md:flex justify-end gap-4 relative h-[400px]">

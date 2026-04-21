@@ -2,9 +2,7 @@
 
 import React, { useState, use } from 'react'; 
 import Link from 'next/link';
-// ១. ប្រើផ្លូវ Import ផ្ទាល់ដើម្បីជៀសវាង Error "Module not found"
 import Header from '../../components/header'; 
-import FilterButtons from '../../components/filterButtons';
 import Footer from '../../components/footer';
 import CartNotification from '../../components/CartNotification'; 
 import { useWeddingData } from '../../hooks/useWeddingData'; // Import ឱ្យត្រូវ Folder
@@ -59,11 +57,11 @@ const CardItem = ({ product, t, lang, onAddToCart }: any) => {
 };
 
 // --- MAIN PAGE ---
-export default function FoodPage({ params }: { params: Promise<{ locale: string }> }) {
-    const resolvedParams = use(params);
-    const lang = resolvedParams.locale as Language;
-    const t = messages[lang] || messages['en'];
+export default function FoodPage() {
+    const [lang, setLang] = useState<Language>('kh');
+    const t = messages[lang];
 
+    const toggleLang = () => setLang(lang === 'en' ? 'kh' : 'en');
     // ២. ទាញទិន្នន័យតាមរយៈ Hook (Professional Step)
     const { categories, products, loading, error } = useWeddingData();
 
@@ -106,9 +104,12 @@ export default function FoodPage({ params }: { params: Promise<{ locale: string 
                 lang={lang}
                 totalItems={totalItems}
             />
-
-            <Header lang={lang} toggleLang={() => {}} isMenuOpen={false} setIsMenuOpen={() => {}} />
-
+            <Header 
+                lang={lang} 
+                toggleLang={toggleLang} 
+                isMenuOpen={false} 
+                setIsMenuOpen={() => {}} 
+            />
             <main className="max-w-7xl mx-auto px-6 py-16">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-gray-100 pb-8">
                     <div className="border-l-4 border-[#B48C00] pl-4">
