@@ -9,9 +9,9 @@ import { messages, Language } from '../../i18n/messages';
 import { Trash2, ShoppingBag, Minus, Plus, ChevronRight, ArrowLeft } from 'lucide-react';
 
 export default function CartPage({ params }: { params: Promise<{ locale: string }> }) {
-  const resolvedParams = use(params); 
-  const lang = resolvedParams.locale as Language;
-  const t = messages[lang] || messages['kh'];
+  const [lang, setLang] = useState<Language>('kh');
+  const t = messages[lang];
+  const toggleLang = () => setLang(lang === 'en' ? 'kh' : 'en');
   
   // ទាញយកទិន្នន័យពី CartContext
   const { cart, totalPrice, removeFromCart, updateTableCount, totalItems } = useCart();
@@ -37,7 +37,7 @@ export default function CartPage({ params }: { params: Promise<{ locale: string 
     <div className={`min-h-screen bg-[#F8F9FA] ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
       <Header 
         lang={lang} 
-        toggleLang={() => {}} 
+        toggleLang={toggleLang}
         isMenuOpen={isMenuOpen} 
         setIsMenuOpen={setIsMenuOpen} 
       />
