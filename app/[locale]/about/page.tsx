@@ -1,22 +1,21 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { MapPin, Phone, Send } from 'lucide-react';
-import Header from '../../components/header';
+import { useParams } from 'next/navigation';
 import { messages, Language } from '../../i18n/messages';
 import { TeamHeader } from '../../components/teamheader';
 import { Menbere } from 'next/font/google';
 import Footer from '@/app/components/footer';
 
 export default function AboutPage() {
-    const [lang, setLang] = useState<Language>('kh');
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const params = useParams();
+    const locale = params.locale as string;
+    const lang = (locale === 'en' || locale === 'kh' ? locale : 'en') as Language;
     const t = messages[lang];
 
     // រក្សាទុក State នៃ Tab នៅទីនេះ ដើម្បីឱ្យ Page ទាំងមូលដឹងថា Tab ណាខ្លះកំពុង Active
     const [activeTab, setActiveTab] = useState<'managers' | 'ourTeam'>('managers');
 
-    const toggleLang = () => setLang(lang === 'en' ? 'kh' : 'en');
 
     //start fetch API
     const [teamDate, setTeamDate] = useState<any[]>([]);
@@ -42,7 +41,6 @@ export default function AboutPage() {
 
     return (
         <div className={`min-h-screen bg-white text-[#333333] ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
-                <Header lang={lang} toggleLang={toggleLang} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
             {/* Hero Banner */}
             <section className="relative h-[400px] flex items-center justify-center pt-20">
                 <div className="absolute inset-0 z-0">
@@ -125,7 +123,6 @@ export default function AboutPage() {
                 </div>
                 </section>
             </main>
-<Footer t={t} lang={lang} />
         </div>
     );
 }

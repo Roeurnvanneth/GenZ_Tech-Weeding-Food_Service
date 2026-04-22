@@ -2,8 +2,6 @@
 
 import React, { useState, use } from 'react'; 
 import Link from 'next/link';
-import Header from '../../components/header'; 
-import Footer from '../../components/footer';
 import CartNotification from '../../components/CartNotification'; 
 import { useWeddingData } from '../../hooks/useWeddingData'; // Import ឱ្យត្រូវ Folder
 import { messages, Language } from '../../i18n/messages';
@@ -57,11 +55,14 @@ const CardItem = ({ product, t, lang, onAddToCart }: any) => {
 };
 
 // --- MAIN PAGE ---
-export default function FoodPage() {
-    const [lang, setLang] = useState<Language>('kh');
+export default function FoodPage({ params }: { params: Promise<{ locale: string }> }) {
+   // 1. Extract the locale from the URL params using 'use'
+    const { locale } = use(params);
+       // 2. Cast the locale to your Language type ('en' or 'kh')
+    const lang = (locale === 'en' || locale === 'kh' ? locale : 'en') as Language;
+       // 3. Get the correct translations
     const t = messages[lang];
 
-    const toggleLang = () => setLang(lang === 'en' ? 'kh' : 'en');
     // ២. ទាញទិន្នន័យតាមរយៈ Hook (Professional Step)
     const { categories, products, loading, error } = useWeddingData();
 
@@ -91,7 +92,7 @@ export default function FoodPage() {
     if (loading) return (
         <div className="h-screen flex flex-col items-center justify-center">
             <Loader2 className="w-12 h-12 text-[#B48C00] animate-spin" />
-            <p className="mt-4 font-black text-gray-400 italic">LOADING DATA...</p>
+            <p className="mt-4 font-black text-gray-400 italic">{t.loading}</p>
         </div>
     );
 
@@ -104,17 +105,11 @@ export default function FoodPage() {
                 lang={lang}
                 totalItems={totalItems}
             />
-            <Header 
-                lang={lang} 
-                toggleLang={toggleLang} 
-                isMenuOpen={false} 
-                setIsMenuOpen={() => {}} 
-            />
             <main className="max-w-7xl mx-auto px-6 py-16">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-gray-100 pb-8">
                     <div className="border-l-4 border-[#B48C00] pl-4">
-                        <h2 className="text-2xl font-black text-black uppercase italic">Categories</h2>
-                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Filter by your preference</p>
+                        <h2 className="text-2xl font-black text-black uppercase italic">{t.categories}</h2>
+                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">{t.fyp}</p>
                     </div>
                     
                     {/* ប៊ូតុង Filter យកតាម Category ពី API */}
@@ -123,7 +118,7 @@ export default function FoodPage() {
                             onClick={() => setActiveCategory('all')}
                             className={`px-8 py-2.5 rounded-full font-black text-[10px] uppercase transition-all ${activeCategory === 'all' ? 'bg-black text-white' : 'bg-gray-100 text-gray-400'}`}
                         >
-                            All Menu
+                            {t.allmenu}
                         </button>
                         {categories.map((cat: any) => (
                             <button 
@@ -137,7 +132,7 @@ export default function FoodPage() {
                     </div>
                 </div>
 
-                {/* ការបង្ហាញកាតម្ហូប */}
+                {/* show card of food */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                     {filteredCards.length > 0 ? (
                         filteredCards.map((product: any) => (
@@ -151,13 +146,11 @@ export default function FoodPage() {
                         ))
                     ) : (
                         <div className="col-span-full py-32 text-center border-2 border-dashed border-gray-100 rounded-[3rem]">
-                            <p className="text-gray-300 font-black italic text-xl uppercase italic">No Products Found</p>
+                            <p className="text-gray-300 font-black italic text-xl uppercase italic">{t.npf}</p>
                         </div>
                     )}
                 </div>
             </main>
-
-            <Footer t={t} lang={lang} />
         </div>
     );
 }

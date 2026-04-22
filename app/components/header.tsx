@@ -3,28 +3,21 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Globe, LogOut, ChevronDown, User, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation'; // Added for language switching
 import { messages, Language } from '../i18n/messages'; 
 import { useCart } from '../[locale]/context/CartContext'; 
 
-interface HeaderProps {
-  lang: Language;
-  toggleLang: () => void;
-  isMenuOpen: boolean;
-  setIsMenuOpen: (open: boolean) => void;
-}
-
-export default function Header({
-  lang,
-  toggleLang,
-  isMenuOpen,
-  setIsMenuOpen
-}: HeaderProps) {
+export default function Header({ lang }: { lang: Language }) {
   const t = messages[lang];
-  const { totalItems } = useCart(); // Extract only totalItems from the cart context
+  const { totalItems } = useCart();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Internal State
   const [userData, setUserData] = useState<{ name: string } | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // Now handled internally
 
-  // 1. When the component mounts, check localStorage for user data and set it to state
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -35,6 +28,14 @@ export default function Header({
       }
     }
   }, []);
+
+  // Logical Language Switcher for Static Export
+  const toggleLang = () => {
+    const newLang = lang === 'en' ? 'kh' : 'en';
+    // Replace the /en/ part of the URL with /kh/
+    const newPath = pathname.replace(`/${lang}`, `/${newLang}`);
+    router.push(newPath);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -58,23 +59,21 @@ export default function Header({
         </div>
 
         {/* --- NAVIGATION MENU (DESKTOP) --- */}
-       <nav className="hidden md:flex flex-[2] justify-center items-center gap-10 text-black font-bold">
-  {t.nav.map((item: any, index: number) => (
-    <Link
-      key={index}
-      // ចំណុចសំខាន់៖ ត្រូវមាន /${lang}/ នៅពីមុខជានិច្ច
-      href={`/${lang}/${item.path}`} 
-      className="hover:text-[#B99808] transition-colors whitespace-nowrap"
-    >
-      {item.label}
-    </Link>
-  ))}
-</nav>
+        <nav className="hidden md:flex flex-[2] justify-center items-center gap-10 text-black font-bold">
+          {t.nav.map((item: any, index: number) => (
+            <Link
+              key={index}
+              href={`/${lang}/${item.path}`} 
+              className="hover:text-[#B99808] transition-colors whitespace-nowrap"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
         
         {/* --- ACTIONS (RIGHT SIDE) --- */}
         <div className="hidden md:flex flex-1 items-center justify-end gap-6">
           
-          {/* Language Switcher */}
           <button
             onClick={toggleLang}
             className="flex items-center gap-2 text-gray-500 font-bold hover:text-[#B99808] transition-all"
@@ -83,7 +82,6 @@ export default function Header({
             <span className="text-xs uppercase">{lang === 'kh' ? 'Kh' : 'EN'}</span>
           </button>
 
-          {/* --- CART ICON --- */}
           <Link 
             href={`/${lang}/cart`} 
             className="relative p-2.5 bg-gray-50 rounded-full border border-gray-100 hover:bg-gray-100 transition-all group"
@@ -96,7 +94,6 @@ export default function Header({
             )}
           </Link>
 
-          {/* --- USER PROFILE / LOGIN --- */}
           {userData ? (
             <div className="relative">
               <button 
@@ -145,26 +142,30 @@ export default function Header({
               {item.label}
             </Link>
           ))}
+          
+          {/* Mobile Language Toggle */}
+          <button onClick={toggleLang} className="flex items-center gap-3 p-5 bg-gray-50 rounded-2xl border font-bold">
+            <Globe size={24} className="text-[#B48C00]" />
+            <span>{lang === 'kh' ? 'Switch to English' : 'ប្តូរទៅភាសាខ្មែរ'}</span>
+          </button>
 
-          {/* Cart Section (Mobile) */}
           <Link href={`/${lang}/cart`} onClick={() => setIsMenuOpen(false)} className="flex justify-between items-center p-5 bg-gray-50 rounded-2xl border border-gray-100 font-bold">
             <div className="flex items-center gap-3">
               <ShoppingCart size={24} className="text-[#B48C00]" />
-              <span>{lang === 'kh' ? 'Shopping Cart' : 'Your Cart'}</span>
+              <span>{lang === 'kh' ? 'កន្ត្រកទំនិញ' : 'Your Cart'}</span>
             </div>
-            <span className="bg-[#B48C00] text-white px-4 py-1 rounded-full text-sm">{totalItems} Items</span>
+            <span className="bg-[#B48C00] text-white px-4 py-1 rounded-full text-sm">{totalItems}</span>
           </Link>
 
-          {/* User Section (Mobile) */}
           <div className="flex flex-col gap-4 mt-2">
             {userData ? (
               <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-4 bg-red-50 text-red-600 font-bold rounded-2xl border border-red-100">
-                <LogOut size={20} /> {lang === 'kh' ? 'Logout' : 'Logout'}
+                <LogOut size={20} /> {lang === 'kh' ? 'ចាកចេញ' : 'Logout'}
               </button>
             ) : (
               <Link href={`/${lang}/customer-login`} onClick={() => setIsMenuOpen(false)}>
                 <button className="w-full py-4 bg-[#B48C00] text-white font-bold rounded-2xl shadow-md uppercase">
-                  {lang === 'kh' ? 'ចូល' : 'Login Now'}
+                  {t.button}
                 </button>
               </Link>
             )}

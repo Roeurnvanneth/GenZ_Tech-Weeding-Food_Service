@@ -9,9 +9,14 @@ import { messages, Language } from '../../i18n/messages';
 import { Trash2, ShoppingBag, Minus, Plus, ChevronRight, ArrowLeft } from 'lucide-react';
 
 export default function CartPage({ params }: { params: Promise<{ locale: string }> }) {
-  const [lang, setLang] = useState<Language>('kh');
-  const t = messages[lang];
-  const toggleLang = () => setLang(lang === 'en' ? 'kh' : 'en');
+  // 1. Extract the locale from the URL params using 'use'
+        const { locale } = use(params);
+        
+        // 2. Cast the locale to your Language type ('en' or 'kh')
+        const lang = (locale === 'en' || locale === 'kh' ? locale : 'en') as Language;
+        
+        // 3. Get the correct translations
+        const t = messages[lang];
   
   // ទាញយកទិន្នន័យពី CartContext
   const { cart, totalPrice, removeFromCart, updateTableCount, totalItems } = useCart();
@@ -35,13 +40,6 @@ export default function CartPage({ params }: { params: Promise<{ locale: string 
 
   return (
     <div className={`min-h-screen bg-[#F8F9FA] ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
-      <Header 
-        lang={lang} 
-        toggleLang={toggleLang}
-        isMenuOpen={isMenuOpen} 
-        setIsMenuOpen={setIsMenuOpen} 
-      />
-
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-10">
         {/* ប៊ូតុងត្រឡប់ក្រោយ */}
         <Link href={`/${lang}/food`} className="inline-flex items-center gap-2 text-black hover:text-[#B48C00] font-black text-xs uppercase mb-8 transition-all">
@@ -53,7 +51,7 @@ export default function CartPage({ params }: { params: Promise<{ locale: string 
           {/* ផ្នែកខាងឆ្វេង៖ បញ្ជីមុខម្ហូបនីមួយៗ (Product Columns) */}
           <div className="lg:col-span-2">
             <h1 className="text-3xl font-black italic uppercase mb-8 border-b-4 border-[#B48C00] w-fit pb-1 text-black tracking-tighter">
-              {lang === 'kh' ? 'បញ្ជីកក់របស់អ្នក' : 'YOUR BOOKING LIST'}
+              {t.ybl}
             </h1>
             
             {cart.length === 0 ? (
@@ -61,7 +59,7 @@ export default function CartPage({ params }: { params: Promise<{ locale: string 
                 <ShoppingBag size={80} className="text-gray-100 mb-6" />
                 <p className="text-black text-xl font-bold mb-8 italic">{lang === 'kh' ? 'មិនទាន់មានមុខម្ហូបក្នុងបញ្ជី' : 'Your bag is empty'}</p>
                 <Link href={`/${lang}/food`} className="bg-[#B48C00] text-white px-10 py-4 rounded-full font-black uppercase shadow-lg hover:bg-black transition-all">
-                  {lang === 'kh' ? 'ទៅមើលមុខម្ហូប' : 'Browse Menu'}
+                  {t.bm}
                 </Link>
               </div>
             ) : (
@@ -69,7 +67,7 @@ export default function CartPage({ params }: { params: Promise<{ locale: string 
                 {cart.map((item: any) => (
                   <div key={item.id} className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center gap-6 hover:border-[#B48C00]/30 transition-all">
                     
-                    {/* រូបភាព Product */}
+                    {/* photo product */}
                     <div className="w-full md:w-44 h-32 flex-shrink-0 relative overflow-hidden rounded-2xl bg-gray-50">
                       <img src={item.image} className="w-full h-full object-cover" alt="" />
                     </div>
@@ -180,8 +178,6 @@ export default function CartPage({ params }: { params: Promise<{ locale: string 
 
         </div>
       </main>
-
-      <Footer t={t} lang={lang} />
     </div>
   );
 }

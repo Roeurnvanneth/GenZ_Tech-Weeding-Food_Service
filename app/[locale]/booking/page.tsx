@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useMemo } from 'react';
-import Header from '../../components/header';
+import { useState, useMemo, use } from 'react';
 import { messages, Language } from '../../i18n/messages';
-import Footer from '@/app/components/footer';
 
 // Static prices for calculation (In real app, fetch these from /api/products)
 const PRICE_PER_FOOD = 150; 
 const PRICE_PER_TENT = 50;
 
-export default function BookingPage() {
-    const [lang, setLang] = useState<Language>('kh');
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [step, setStep] = useState(1);
-    const [loading, setLoading] = useState(false);
-
+export default function BookingPage({ params }: { params: Promise<{ locale: string }> }) {
+     // 1. Extract the locale from the URL params using 'use'
+        const { locale } = use(params);
+        // 2. Cast the locale to your Language type ('en' or 'kh')
+        const lang = (locale === 'en' || locale === 'kh' ? locale : 'en') as Language;
+        // 3. Get the correct translations
+        const t = messages[lang];
     // 1. Initial Form State
     const [formData, setFormData] = useState({
         name: "",
@@ -29,8 +28,7 @@ export default function BookingPage() {
         tentProductId: "5"
     });
 
-    const t = messages[lang];
-    const toggleLang = () => setLang(prev => (prev === 'kh' ? 'en' : 'kh'));
+    
 
     // 2. Dynamic Price Calculation
     const totalPrice = useMemo(() => {
@@ -46,9 +44,12 @@ export default function BookingPage() {
     };
 
     // 3. API Submission Logic
+    const [step, setStep] = useState(1);
+    const [loading, setLoading] = useState(false);
+
     const handleConfirmBooking = async () => {
         if (!formData.name || !formData.phone || !formData.date || !formData.time) {
-            alert(lang === 'kh' ? "សូមបំពេញព័ត៌មានដែលចាំបាច់!" : "Please fill in all required fields!");
+            alert(t.pff);
             return;
         }
 
@@ -78,7 +79,7 @@ export default function BookingPage() {
             const result = await response.json();
 
             if (result.success) {
-                alert(lang === 'kh' ? "ការកក់ជោគជ័យ!" : "Booking Successful!");
+                alert(t.bs);
                 window.location.href = "/"; 
             } else {
                 alert(result.error || "Error");
@@ -92,18 +93,12 @@ export default function BookingPage() {
 
     return (
         <div className={`min-h-screen bg-white ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
-            <Header
-                lang={lang}
-                toggleLang={toggleLang}
-                isMenuOpen={isMenuOpen}
-                setIsMenuOpen={setIsMenuOpen}
-            />
             <section className="relative h-[250px] md:h-[350px] flex items-center justify-center">
                 <img src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2000" className="absolute inset-0 w-full h-full object-cover brightness-50" alt="Hero" />
                 <div className="relative z-10 text-center">
                     <h1 className="text-white text-3xl md:text-5xl font-bold uppercase border-2 border-white px-8 py-2">
-                        {step === 1 ? t.btnMore : t.ci}
-                    </h1>
+                                {typeof step !== 'undefined' && step === 1 ? t.btnMore : t.ci}
+                            </h1>
                 </div>
             </section>
 
@@ -208,7 +203,6 @@ export default function BookingPage() {
                 )}
             </main>
 
-            <Footer t={t} lang={lang} />
         </div>
     );
 }

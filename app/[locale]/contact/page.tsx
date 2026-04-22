@@ -1,17 +1,19 @@
 "use client";
 
 import React, { useState, use } from 'react';
-import Header from '@/app/components/header';
-import Footer from '@/app/components/footer';
 import { messages, Language } from '../../i18n/messages';
 import Link from 'next/link';
 
 export default function ContactPage({ params }: { params: Promise<{ locale: string }> }) {
-    // 1. Get lang directly from URL params (No useState for lang anymore!)
-    const [lang, setLang] = useState<Language>('kh');
+    // 1. Extract the locale from the URL params using 'use'
+    const { locale } = use(params);
+    
+    // 2. Cast the locale to your Language type ('en' or 'kh')
+    const lang = (locale === 'en' || locale === 'kh' ? locale : 'en') as Language;
+    
+    // 3. Get the correct translations
     const t = messages[lang];
-    const toggleLang = () => setLang(lang === 'en' ? 'kh' : 'en');
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
     const [formData, setFormData] = useState({
         name: "",
         phone: "",
@@ -23,7 +25,6 @@ export default function ContactPage({ params }: { params: Promise<{ locale: stri
         phone: ""
     });
 
-    // Handle Form Submission
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -43,13 +44,11 @@ export default function ContactPage({ params }: { params: Promise<{ locale: stri
         if (hasError) return;
 
         alert(lang === 'kh' ? "សំណើរបស់អ្នកត្រូវបានផ្ញើ!" : "Your request has been sent!");
-        console.log("Form Data:", formData);
     };
 
     return (
         <div className={`min-h-screen bg-white text-black ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
-                <Header lang={lang} toggleLang={toggleLang} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-
+            {/* HERO SECTION */}
             <header className="relative min-h-[500px] flex items-center justify-center pt-20 pb-10 px-6">
                 <div className="absolute inset-0 z-0">
                     <img
@@ -59,9 +58,9 @@ export default function ContactPage({ params }: { params: Promise<{ locale: stri
                     />
                 </div>
                 <div className="relative z-10 w-full flex justify-center items-center">
-                    <button className="border-2 border-[#B99808] w-[250px] text-white px-10 py-3 font-bold hover:bg-[#B99808] bg-[#2d1212]/50 transition-all uppercase text-xl">
+                    <div className="border-2 border-[#B99808] w-[250px] text-white px-10 py-3 font-bold bg-[#2d1212]/50 text-center uppercase text-xl">
                         {t.contactUs}
-                    </button>
+                    </div>
                 </div>
             </header>
 
@@ -82,6 +81,7 @@ export default function ContactPage({ params }: { params: Promise<{ locale: stri
                         </div>
                     </div>
 
+                    {/* FORM SECTION */}
                     <div className="lg:w-[550px] w-full bg-[#1A0B0B] rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
                         <h2 className="text-[#C59D5F] text-center text-xl font-bold uppercase tracking-widest mb-10">
                             {t.contactUs}
@@ -136,14 +136,12 @@ export default function ContactPage({ params }: { params: Promise<{ locale: stri
                                 <div className="bg-white p-4 rounded-3xl shadow-lg">
                                     <img src="/tlg.jpg" alt="Telegram QR" className="w-32 h-32 object-contain" />
                                 </div>
-                                <Link href="https://t.me/LYZA2701" className="text-white font-bold text-sm mt-2" target="_blank">@LYZA2701</Link>
+                                <Link href="https://t.me/LYZA2701" className="text-white font-bold text-sm mt-2 hover:text-[#C59D5F]" target="_blank">@LYZA2701</Link>
                             </div>
                         </div>
                     </div>
                 </div>
             </main>
-
-            <Footer t={t} lang={lang} />
         </div>
     );
 }
