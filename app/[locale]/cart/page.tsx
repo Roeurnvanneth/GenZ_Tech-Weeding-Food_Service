@@ -1,123 +1,239 @@
 "use client";
-
-import React, { use, useState } from 'react';
-import Link from 'next/link';
-import { ShoppingBag, Minus, Plus, Trash2, ArrowLeft, ChevronRight } from 'lucide-react';
-import Header from '../../components/header';
-import Footer from '../../components/footer';
-import { useCart } from '../context/CartContext';
-import { messages, Language } from '../../i18n/messages';
-
-export default function CartPage({ params }: { params: Promise<{ locale: string }> }) {
+ 
+import React, { use, useState } from "react";
+import Link from "next/link";
+import { Minus, Plus, Trash2, ArrowLeft } from "lucide-react";
+import Header from "../../components/header";
+import Footer from "../../components/footer";
+import { useCart } from "../context/CartContext";
+import { Language } from "../../i18n/messages";
+ 
+export default function CartPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
   const resolvedParams = use(params);
   const lang = resolvedParams.locale as Language;
-  const t = messages[lang] || messages['kh'];
-  
-  const { cart, totalPrice, removeFromCart, updateTableCount, totalItems } = useCart();
+ 
+  const { cart, removeFromCart, updateTableCount } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+ 
   const EXCHANGE_RATE = 4100;
-  const formatRiel = (usd: number) => (usd * EXCHANGE_RATE).toLocaleString() + " ៛";
-
-  // មុខងារសម្រាប់បន្តទៅកាន់ទំព័រ Booking
+  const formatRiel = (usd: number) =>
+    (usd * EXCHANGE_RATE).toLocaleString() + " ៛";
+ 
+  // ====================================================
+  // ការគណនា: ម្ហូបសរុប + Hall Fee (តម្លៃខ្ពស់បំផុតពី Cart)
+  // ====================================================
+  const subtotalFood = cart.reduce(
+    (acc: number, item: any) =>
+      acc + Number(item.price_usd || 0) * (item.tables || 1),
+    0
+  );
+ 
+  // យក hallPrice ខ្ពស់បំផុតពី items ទាំងអស់ក្នុង Cart
+  const hallPrices = cart.map((item: any) => Number(item.hallPrice || 0));
+  const HALL_FEE = hallPrices.length > 0 ? Math.max(...hallPrices) : 0;
+ 
+  const grandTotal = subtotalFood + HALL_FEE;
+ 
   const handleProceedToBooking = () => {
-    // រក្សាទុកទិន្នន័យចូល localStorage ដើម្បីឱ្យ Booking Page ទាញយកប្រើប្រាស់
-    localStorage.setItem('cartData', JSON.stringify(cart));
-    localStorage.setItem('cartTotal', totalPrice.toFixed(2));
-    
-    // ប្តូរទំព័រទៅកាន់ Booking
+    localStorage.setItem("cartData", JSON.stringify(cart));
+    localStorage.setItem("cartTotal", grandTotal.toFixed(2));
     window.location.href = `/${lang}/booking`;
   };
-
-  const handleInputChange = (id: number, value: string) => {
-    const num = value === "" ? 0 : parseInt(value);
-    if (!isNaN(num) && num >= 0) updateTableCount(id, num);
-  };
-
+ 
   return (
-    <div className={`min-h-screen bg-[#F8F9FA] ${lang === 'kh' ? 'font-khmer' : 'font-sans'}`}>
-      <Header lang={lang} toggleLang={() => {}} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-
+    <div
+      className={`min-h-screen bg-[#F8F9FA] ${lang === "kh" ? "font-khmer" : "font-sans"}`}
+    >
+      <Header
+        lang={lang}
+        toggleLang={() => {}}
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+      />
+ 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-10">
-        {/* ប៊ូតុងត្រឡប់ក្រោយ */}
-        <Link href={`/${lang}/food`} className="inline-flex items-center gap-2 text-black hover:text-[#B48C00] font-black text-xs uppercase mb-8 transition-all">
-          <ArrowLeft size={18} strokeWidth={3} /> {lang === 'kh' ? 'បន្តជ្រើសរើសមុខម្ហូប' : 'BACK TO MENU'}
+        {/* Back Button */}
+        <Link
+          href={`/${lang}/food`}
+          className="inline-flex items-center gap-2 text-black hover:text-[#B48C00] font-black text-xs uppercase mb-8"
+        >
+          <ArrowLeft size={18} strokeWidth={3} />
+          {lang === "kh" ? "បន្តជ្រើសរើសមុខម្ហូប" : "BACK TO MENU"}
         </Link>
-
+ 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* បញ្ជីមុខម្ហូបក្នុងកន្ត្រក */}
+          {/* ====== Left: Cart Items ====== */}
           <div className="lg:col-span-2">
-            <h1 className="text-3xl font-black italic uppercase mb-8 border-b-4 border-[#B48C00] w-fit pb-1 text-black tracking-tighter">
-              {lang === 'kh' ? 'បញ្ជីកក់របស់អ្នក' : 'YOUR BOOKING LIST'}
+            <h1 className="text-3xl font-black italic uppercase mb-8 border-b-4 border-[#B48C00] w-fit pb-1 text-black">
+              {lang === "kh" ? "បញ្ជីកក់របស់អ្នក" : "YOUR BOOKING LIST"}
             </h1>
-            
+ 
             {cart.length === 0 ? (
-              <div className="bg-white rounded-[2.5rem] p-16 text-center border-2 border-dashed border-gray-200 flex flex-col items-center">
-                <ShoppingBag size={80} className="text-gray-100 mb-6" />
-                <p className="text-black text-xl font-bold mb-8 italic">{lang === 'kh' ? 'មិនទាន់មានមុខម្ហូបក្នុងបញ្ជី' : 'Your bag is empty'}</p>
-                <Link href={`/${lang}/food`} className="bg-[#B48C00] text-white px-10 py-4 rounded-full font-black uppercase shadow-lg hover:bg-black transition-all">
-                  {lang === 'kh' ? 'ទៅមើលមុខម្ហូប' : 'Browse Menu'}
+              <div className="bg-white rounded-[2.5rem] p-16 text-center border-2 border-dashed border-gray-200">
+                <p className="text-black text-xl font-bold italic">
+                  {lang === "kh" ? "កន្ត្រកទទេ" : "Your bag is empty"}
+                </p>
+                <Link
+                  href={`/${lang}/food`}
+                  className="inline-block mt-6 px-8 py-3 bg-black text-white rounded-2xl font-black text-xs uppercase hover:bg-[#B48C00] transition-all"
+                >
+                  {lang === "kh" ? "ជ្រើសរើសម្ហូប" : "Browse Menu"}
                 </Link>
               </div>
             ) : (
               <div className="space-y-6">
-                {cart.map((item: any) => (
-                  <div key={item.id} className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center gap-6">
-                    <div className="w-full md:w-44 h-32 flex-shrink-0 relative overflow-hidden rounded-2xl bg-gray-50">
-                      <img src={item.image || '/default-food.jpg'} className="w-full h-full object-cover" alt={item.menu_name} />
-                    </div>
-                    <div className="flex-grow text-center md:text-left">
-                      <h3 className="font-black text-xl text-black uppercase mb-1">{item.menu_name}</h3>
-                      <div className="flex flex-col gap-1 mb-4">
-                        <span className="text-[#B48C00] font-black text-xl">${item.price_usd.toFixed(2)}</span>
-                        <span className="text-blue-600 font-bold text-xs">({formatRiel(item.price_usd)}) / table</span>
-                      </div>
-                      <div className="flex items-center justify-center md:justify-start">
-                        <div className="flex items-center bg-gray-50 rounded-xl p-1 border border-gray-200 shadow-inner">
-                          <button onClick={() => updateTableCount(item.id, Math.max(0, item.tables - 1))} className="w-10 h-10 bg-white text-black rounded-lg shadow-sm flex items-center justify-center"><Minus size={18} /></button>
-                          <input type="text" value={item.tables} onChange={(e) => handleInputChange(item.id, e.target.value)} className="w-10 h-10 bg-transparent text-center font-black text-2xl text-black focus:outline-none" />
-                          <button onClick={() => updateTableCount(item.id, item.tables + 1)} className="w-10 h-10 bg-white text-black rounded-lg shadow-sm flex items-center justify-center"><Plus size={18} /></button>
+                {cart.map((item: any) => {
+                  // ទាញ hallPrice ពី item ដោយផ្ទាល់
+                  const itemHallPrice = Number(item.hallPrice || 0);
+                  const itemFoodPrice = Number(item.price_usd || 0);
+                  const tables = item.tables || 1;
+ 
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center gap-6"
+                    >
+                      {/* Product Image */}
+                      <img
+                        src={item.image}
+                        className="w-44 h-32 rounded-2xl object-cover bg-gray-50 flex-shrink-0"
+                        alt={item.menu_name}
+                      />
+ 
+                      <div className="flex-grow w-full">
+                        <h3 className="font-black text-xl text-black uppercase mb-3">
+                          {item.menu_name}
+                        </h3>
+ 
+                        {/* Food Price Badge + Hall Price Badge */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-xs font-bold">
+                            {lang === "kh" ? "តម្លៃម្ហូប" : "Food"}:
+                            ${itemFoodPrice.toFixed(2)}
+                          </div>
+                          <div className="bg-amber-50 text-[#B48C00] px-3 py-1 rounded-lg text-xs font-bold">
+                            {lang === "kh" ? "តម្លៃរោង" : "Hall"}:
+                            {/* ✅ បង្ហាញ hallPrice ពិតប្រាកដ ឬ $0.00 */}
+                            +${itemHallPrice.toFixed(2)}
+                          </div>
+                        </div>
+ 
+                        {/* Table Count Controls */}
+                        <div className="flex items-center bg-gray-200 w-fit p-1 rounded-xl gap-1">
+                          <button
+                            onClick={() =>
+                              updateTableCount(item.id, Math.max(1, tables - 1))
+                            }
+                            className="w-10 h-10 bg-black text-white rounded-lg shadow-sm flex items-center justify-center hover:bg-[#B48C00] transition-all"
+                          >
+                            <Minus size={16} />
+                          </button>
+                          <span className="w-12 text-center font-black text-black text-2xl">
+                            {tables}
+                          </span>
+                          <button
+                            onClick={() =>
+                              updateTableCount(item.id, tables + 1)
+                            }
+                            className="w-10 h-10 bg-black text-white rounded-lg shadow-sm flex items-center justify-center hover:bg-[#B48C00] transition-all"
+                          >
+                            <Plus size={16} />
+                          </button>
                         </div>
                       </div>
+ 
+                      {/* Right: Total + Remove */}
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-black text-3xl text-black">
+                          ${(itemFoodPrice * tables).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {tables} {lang === "kh" ? "តុ" : "table(s)"}
+                        </p>
+                        <button
+                          onClick={() => removeFromCart(item.id)}
+                          className="text-red-400 hover:text-red-600 mt-3 transition-all"
+                        >
+                          <Trash2 size={20} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="text-right min-w-[180px] pt-4 md:pt-0 md:pl-8 flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto">
-                        <p className="font-black text-3xl text-black leading-none">${(item.price_usd * item.tables).toFixed(2)}</p>
-                        <button onClick={() => removeFromCart(item.id)} className="text-gray-300 hover:text-red-600"><Trash2 size={24} /></button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
-
-          {/* សេចក្តីសង្ខេបនៃការបញ្ជាទិញ */}
+ 
+          {/* ====== Right: Order Summary ====== */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-gray-100 sticky top-28">
-              <h2 className="font-black text-2xl uppercase italic mb-8 text-center text-black">ORDER SUMMARY</h2>
-              <div className="space-y-6 mb-10">
-                <div className="flex justify-between font-bold text-gray-500 text-sm uppercase">
-                  <span>{lang === 'kh' ? 'ចំនួនតុសរុប' : 'TOTAL TABLES'}</span>
-                  <span className="text-black font-black text-xl">{totalItems} TBL</span>
+            <div className="bg-white rounded-[2.5rem] p-8 shadow-xl sticky top-28 border-t-4 border-[#B48C00]">
+              <h2 className="font-black text-xl mb-6 uppercase text-black">
+                {lang === "kh" ? "សរុបការកក់" : "Order Summary"}
+              </h2>
+ 
+              <div className="space-y-4 mb-8">
+                {/* Food Subtotal */}
+                <div className="flex justify-between text-gray-500">
+                  <span className="text-sm">
+                    {lang === "kh" ? "តម្លៃម្ហូបសរុប" : "Food Subtotal"}:
+                  </span>
+                  <span className="font-bold text-black">
+                    ${subtotalFood.toFixed(2)}
+                  </span>
                 </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-5xl font-black text-[#B48C00] italic leading-none tracking-tighter">${totalPrice.toFixed(2)}</span>
-                  <span className="text-2xl font-black text-blue-600 mt-4 italic">{formatRiel(totalPrice)}</span>
+ 
+                {/* Hall & Decor Fee */}
+                <div className="flex justify-between text-[#B48C00]">
+                  <span className="text-sm">
+                    {lang === "kh" ? "តម្លៃរោង/តុបតែង" : "Hall & Decor"}:
+                  </span>
+                  {/* ✅ បង្ហាញ HALL_FEE ពិតប្រាកដ */}
+                  <span className="font-bold">+${HALL_FEE.toFixed(2)}</span>
+                </div>
+ 
+                {/* Divider */}
+                <div className="border-t border-dashed border-gray-200 pt-4">
+                  <div className="flex justify-between items-start">
+                    <span className="font-black text-black text-lg">
+                      {lang === "kh" ? "សរុប" : "Total"}:
+                    </span>
+                    <div className="text-right">
+                      <span className="block font-black text-[#B48C00] text-3xl">
+                        ${grandTotal.toFixed(2)}
+                      </span>
+                      <span className="text-blue-600 text-sm font-bold">
+                        {formatRiel(grandTotal)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              
-              <button 
+ 
+              {/* Book Now Button */}
+              <button
                 onClick={handleProceedToBooking}
                 disabled={cart.length === 0}
-                className="w-full bg-black text-white py-5 rounded-2xl font-black text-xl uppercase hover:bg-[#B48C00] transition-all shadow-xl flex items-center justify-center gap-3 group disabled:bg-gray-300"
+                className="w-full bg-black text-white py-4 rounded-2xl font-black uppercase hover:bg-[#B48C00] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {lang === 'kh' ? 'កក់ឥឡូវនេះ' : 'BOOK NOW'} 
-                <ChevronRight className="group-hover:translate-x-2 transition-transform" />
+                {lang === "kh" ? "កក់ឥឡូវនេះ" : "BOOK NOW"}
               </button>
+ 
+              {/* Item count info */}
+              {cart.length > 0 && (
+                <p className="text-center text-gray-400 text-xs font-bold mt-4 uppercase">
+                  {cart.length} {lang === "kh" ? "មុខម្ហូប" : "menu item(s)"}
+                </p>
+              )}
             </div>
           </div>
         </div>
       </main>
-      <Footer lang={'en'} />
+ 
+      <Footer lang={"en"} />
     </div>
   );
 }

@@ -268,7 +268,7 @@ export default function BookingPage({ params }: { params: Promise<{ locale: Lang
                 )}
             </main>
 
-            <Footer lang={'en'}/>
+            <Footer lang={'en'} />
         </div>
     );
 }
