@@ -2,28 +2,29 @@
 
 import React, { useState, use } from "react";
 import Link from "next/link";
-import Header from "../../components/header";
-import Footer from "../../components/footer";
 import CartNotification from "../../components/CartNotification";
 import { useWeddingData } from "../../hooks/useWeddingData";
 import { messages, Language } from "../../i18n/messages";
 import { useCart } from "../context/CartContext";
 import { ShoppingCart, ChevronRight, Loader2 } from "lucide-react";
 
+// ===== HELPER: Extract hallPrice from any possible API field name =====
 const extractHallPrice = (product: any): number => {
+  // ព្យាយាមទាញ hallPrice ពីគ្រប់ field ដែលអាចមាន
   return Number(
     product.hallPrice ||
-    product.hall_price ||
-    product.hall_fee ||
-    product.hallFee ||
-    product.decor_price ||
-    product.decorPrice ||
-    product.venue_price ||
-    product.venuePrice ||
-    0
+      product.hall_price ||
+      product.hall_fee ||
+      product.hallFee ||
+      product.decor_price ||
+      product.decorPrice ||
+      product.venue_price ||
+      product.venuePrice ||
+      0,
   );
 };
 
+// ===== CARD COMPONENT =====
 const CardItem = ({ product, lang, onAddToCart }: any) => {
   const image = Array.isArray(product.images)
     ? product.images[0]
@@ -33,40 +34,25 @@ const CardItem = ({ product, lang, onAddToCart }: any) => {
   const hallPrice = extractHallPrice(product);
   const slug = product.slug || `product-${product.id}`;
 
-  const title =
-    lang === "kh"
-      ? product.translations?.kh?.title || product.menu_name || slug
-      : product.translations?.en?.title || product.menu_name || slug;
-
   return (
     <div className="group bg-white rounded-[2rem] p-4 shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 flex flex-col h-full">
-      {/* Image — clicking goes to detail */}
-      <Link href={`/${lang}/foodDetail/${slug}`} className="block">
-        <div className="relative h-48 overflow-hidden rounded-[1.5rem] mb-4 cursor-pointer">
-          <img
-            src={image}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            alt={title}
-          />
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center">
-            <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-slate-800 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full transition-all duration-300">
-              {lang === "kh" ? "មើលលម្អិត" : "View Detail"}
-            </span>
-          </div>
-        </div>
-      </Link>
+      {/* Product Image */}
+      <div className="relative h-48 overflow-hidden rounded-[1.5rem] mb-4">
+        <img
+          src={image}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          alt={slug}
+        />
+      </div>
 
       <div className="flex-grow">
-        {/* Title — clicking goes to detail */}
-        <Link href={`/${lang}/foodDetail/${slug}`}>
-          <h3 className="text-lg font-black text-slate-900 mb-4 uppercase italic line-clamp-1 hover:text-[#B48C00] transition-colors cursor-pointer">
-            {title}
-          </h3>
-        </Link>
+        <h3 className="text-lg font-black text-slate-900 mb-4 uppercase italic line-clamp-1">
+          {slug}
+        </h3>
 
         {/* Price Grid */}
         <div className="grid grid-cols-2 gap-2 mb-4">
+          {/* Food Price */}
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
             <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1 truncate">
               {lang === "kh" ? "តម្លៃម្ហូប/តុ" : "Food Price"}
@@ -75,6 +61,8 @@ const CardItem = ({ product, lang, onAddToCart }: any) => {
               ${foodPrice.toFixed(2)}
             </span>
           </div>
+
+          {/* Hall & Decor Price */}
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
             <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1 truncate">
               {lang === "kh" ? "តម្លៃរោង/តុបតែង" : "Hall & Decor"}
@@ -95,10 +83,9 @@ const CardItem = ({ product, lang, onAddToCart }: any) => {
           <ShoppingCart size={12} />
           {lang === "kh" ? "បន្ថែម" : "Add"}
         </button>
-        {/* ✅ Fixed: now goes to foodDetail */}
         <Link
-          href={`/${lang}/foodDetail/${slug}`}
-          className="flex-1 bg-gray-50 flex items-center justify-center rounded-xl text-gray-400 hover:text-[#B48C00] hover:bg-amber-50 transition-all"
+          href={`/${lang}/food/${product.slug}`}
+          className="flex-1 bg-gray-50 flex items-center justify-center rounded-xl text-gray-400 hover:text-black transition-all"
         >
           <ChevronRight size={18} />
         </Link>
@@ -107,6 +94,7 @@ const CardItem = ({ product, lang, onAddToCart }: any) => {
   );
 };
 
+// ===== MAIN PAGE =====
 export default function FoodPage({
   params,
 }: {
@@ -123,7 +111,9 @@ export default function FoodPage({
   const { addToCart, totalItems } = useCart();
 
   const handleAddToCart = (product: any) => {
+    // ទាញ hallPrice ឱ្យបានត្រូវ មុនបញ្ជូនទៅ Cart
     const hallPrice = extractHallPrice(product);
+
     const item = {
       id: product.id,
       menu_name:
@@ -131,11 +121,12 @@ export default function FoodPage({
           ? product.translations?.kh?.title || product.menu_name
           : product.translations?.en?.title || product.menu_name,
       price_usd: Number(product.maxPrice || product.price_usd || 0),
-      hallPrice: hallPrice,
+      hallPrice: hallPrice, // ✅ បញ្ជូន hallPrice ត្រូវ
       image: Array.isArray(product.images)
         ? product.images[0]
         : product.image || product.images,
     };
+
     addToCart(item);
     setLastAddedProduct(item);
     setIsNotifyOpen(true);
@@ -145,7 +136,7 @@ export default function FoodPage({
     activeCategory === "all"
       ? products
       : products.filter(
-          (p: any) => Number(p.categoryId) === Number(activeCategory)
+          (p: any) => Number(p.categoryId) === Number(activeCategory),
         );
 
   if (loading)
@@ -164,7 +155,9 @@ export default function FoodPage({
     );
 
   return (
-    <div className={`min-h-screen bg-[#FDFDFD] ${lang === "kh" ? "font-khmer" : "font-sans"}`}>
+    <div
+      className={`min-h-screen bg-[#FDFDFD] ${lang === "kh" ? "font-khmer" : "font-sans"}`}
+    >
       <CartNotification
         isOpen={isNotifyOpen}
         onClose={() => setIsNotifyOpen(false)}
@@ -173,21 +166,26 @@ export default function FoodPage({
         totalItems={totalItems}
       />
 
-      <Header lang={lang} toggleLang={() => {}} isMenuOpen={false} setIsMenuOpen={() => {}} />
 
       <main className="max-w-7xl mx-auto px-6 py-16">
+        {/* Header + Filter */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-gray-100 pb-8">
           <div className="border-l-4 border-[#B48C00] pl-4">
-            <h2 className="text-2xl font-black text-black uppercase italic">Categories</h2>
+            <h2 className="text-2xl font-black text-black uppercase italic">
+              Categories
+            </h2>
             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">
               Filter by your preference
             </p>
           </div>
+
           <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
             <button
               onClick={() => setActiveCategory("all")}
               className={`px-8 py-2.5 rounded-full font-black text-[10px] uppercase transition-all whitespace-nowrap ${
-                activeCategory === "all" ? "bg-black text-white" : "bg-gray-100 text-gray-400"
+                activeCategory === "all"
+                  ? "bg-black text-white"
+                  : "bg-gray-100 text-gray-400"
               }`}
             >
               All Menu
@@ -208,6 +206,7 @@ export default function FoodPage({
           </div>
         </div>
 
+        {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {filteredCards.length > 0 ? (
             filteredCards.map((product: any) => (
@@ -229,7 +228,7 @@ export default function FoodPage({
         </div>
       </main>
 
-      <Footer lang={"en"} />
+      
     </div>
   );
 }

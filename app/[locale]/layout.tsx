@@ -1,9 +1,11 @@
-import { CartProvider } from '../[locale]/context/CartContext';
-import { Toaster } from 'react-hot-toast';
+import "../globals.css";
+import { CartProvider } from "./context/CartContext"; // Adjust path if needed
+import Header from "../components/header";
+import Footer from "../components/footer";
 
-// 1. RootLayout ត្រូវតែជា Server Component (មិនអាចជា 'use client' ទេ)
-// 2. ការប្រើ params ក្នុង Layout គឺត្រូវតាមស្តង់ដារថ្មីរបស់ Next.js 15+
-export default async function RootLayout({
+// app/[locale]/layout.tsx
+
+export default async function LocaleLayout({
   children,
   params,
 }: {
@@ -12,16 +14,12 @@ export default async function RootLayout({
 }) {
   const { locale } = await params;
 
+  // No <html> or <body> here!
   return (
-    <html lang={locale}>
-      <body className="antialiased">
-        {/* CartProvider គឺជា Client Component ដូច្នេះវានឹងមិនប៉ះពាល់ដល់ RootLayout */}
-        <CartProvider>
-          {children}
-          <Toaster position="top-right" />
-        </CartProvider>  
-      </body>
-    </html>
-    
+    <CartProvider>
+      <Header lang={locale as any} />
+      <main>{children}</main>
+      <Footer lang={locale as any} />
+    </CartProvider>
   );
 }

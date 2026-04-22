@@ -1,13 +1,12 @@
 "use client";
- 
+
 import React, { use, useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, Trash2, ArrowLeft } from "lucide-react";
-import Header from "../../components/header";
-import Footer from "../../components/footer";
+import { messages } from "../../i18n/messages";
 import { useCart } from "../context/CartContext";
 import { Language } from "../../i18n/messages";
- 
+
 export default function CartPage({
   params,
 }: {
@@ -15,46 +14,39 @@ export default function CartPage({
 }) {
   const resolvedParams = use(params);
   const lang = resolvedParams.locale as Language;
- 
+  const t = messages[lang];
   const { cart, removeFromCart, updateTableCount } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
- 
+
   const EXCHANGE_RATE = 4100;
   const formatRiel = (usd: number) =>
     (usd * EXCHANGE_RATE).toLocaleString() + " ៛";
- 
+
   // ====================================================
   // ការគណនា: ម្ហូបសរុប + Hall Fee (តម្លៃខ្ពស់បំផុតពី Cart)
   // ====================================================
   const subtotalFood = cart.reduce(
     (acc: number, item: any) =>
       acc + Number(item.price_usd || 0) * (item.tables || 1),
-    0
+    0,
   );
- 
+
   // យក hallPrice ខ្ពស់បំផុតពី items ទាំងអស់ក្នុង Cart
   const hallPrices = cart.map((item: any) => Number(item.hallPrice || 0));
   const HALL_FEE = hallPrices.length > 0 ? Math.max(...hallPrices) : 0;
- 
+
   const grandTotal = subtotalFood + HALL_FEE;
- 
+
   const handleProceedToBooking = () => {
     localStorage.setItem("cartData", JSON.stringify(cart));
     localStorage.setItem("cartTotal", grandTotal.toFixed(2));
     window.location.href = `/${lang}/booking`;
   };
- 
+
   return (
     <div
       className={`min-h-screen bg-[#F8F9FA] ${lang === "kh" ? "font-khmer" : "font-sans"}`}
     >
-      <Header
-        lang={lang}
-        toggleLang={() => {}}
-        isMenuOpen={isMenuOpen}
-        setIsMenuOpen={setIsMenuOpen}
-      />
- 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-10">
         {/* Back Button */}
         <Link
@@ -64,24 +56,27 @@ export default function CartPage({
           <ArrowLeft size={18} strokeWidth={3} />
           {lang === "kh" ? "បន្តជ្រើសរើសមុខម្ហូប" : "BACK TO MENU"}
         </Link>
- 
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* ====== Left: Cart Items ====== */}
           <div className="lg:col-span-2">
             <h1 className="text-3xl font-black italic uppercase mb-8 border-b-4 border-[#B48C00] w-fit pb-1 text-black">
               {lang === "kh" ? "បញ្ជីកក់របស់អ្នក" : "YOUR BOOKING LIST"}
             </h1>
- 
+
             {cart.length === 0 ? (
-              <div className="bg-white rounded-[2.5rem] p-16 text-center border-2 border-dashed border-gray-200">
-                <p className="text-black text-xl font-bold italic">
-                  {lang === "kh" ? "កន្ត្រកទទេ" : "Your bag is empty"}
+              <div className="bg-white rounded-[2.5rem] p-16 text-center border-2 border-dashed border-gray-200 flex flex-col items-center">
+                {/* <ShoppingBag size={80} className="text-gray-100 mb-6" /> */}
+                <p className="text-black text-xl font-bold mb-8 italic">
+                  {lang === "kh"
+                    ? "មិនទាន់មានមុខម្ហូបក្នុងបញ្ជី"
+                    : "Your bag is empty"}
                 </p>
                 <Link
                   href={`/${lang}/food`}
-                  className="inline-block mt-6 px-8 py-3 bg-black text-white rounded-2xl font-black text-xs uppercase hover:bg-[#B48C00] transition-all"
+                  className="bg-[#B48C00] text-white px-10 py-4 rounded-full font-black uppercase shadow-lg hover:bg-black transition-all"
                 >
-                  {lang === "kh" ? "ជ្រើសរើសម្ហូប" : "Browse Menu"}
+                  {t.bm}
                 </Link>
               </div>
             ) : (
@@ -91,7 +86,7 @@ export default function CartPage({
                   const itemHallPrice = Number(item.hallPrice || 0);
                   const itemFoodPrice = Number(item.price_usd || 0);
                   const tables = item.tables || 1;
- 
+
                   return (
                     <div
                       key={item.id}
@@ -103,17 +98,17 @@ export default function CartPage({
                         className="w-44 h-32 rounded-2xl object-cover bg-gray-50 flex-shrink-0"
                         alt={item.menu_name}
                       />
- 
+
                       <div className="flex-grow w-full">
                         <h3 className="font-black text-xl text-black uppercase mb-3">
                           {item.menu_name}
                         </h3>
- 
+
                         {/* Food Price Badge + Hall Price Badge */}
                         <div className="flex flex-wrap gap-2 mb-4">
                           <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-xs font-bold">
-                            {lang === "kh" ? "តម្លៃម្ហូប" : "Food"}:
-                            ${itemFoodPrice.toFixed(2)}
+                            {lang === "kh" ? "តម្លៃម្ហូប" : "Food"}: $
+                            {itemFoodPrice.toFixed(2)}
                           </div>
                           <div className="bg-amber-50 text-[#B48C00] px-3 py-1 rounded-lg text-xs font-bold">
                             {lang === "kh" ? "តម្លៃរោង" : "Hall"}:
@@ -121,7 +116,7 @@ export default function CartPage({
                             +${itemHallPrice.toFixed(2)}
                           </div>
                         </div>
- 
+
                         {/* Table Count Controls */}
                         <div className="flex items-center bg-gray-200 w-fit p-1 rounded-xl gap-1">
                           <button
@@ -145,7 +140,7 @@ export default function CartPage({
                           </button>
                         </div>
                       </div>
- 
+
                       {/* Right: Total + Remove */}
                       <div className="text-right flex-shrink-0">
                         <p className="font-black text-3xl text-black">
@@ -167,14 +162,14 @@ export default function CartPage({
               </div>
             )}
           </div>
- 
+
           {/* ====== Right: Order Summary ====== */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-[2.5rem] p-8 shadow-xl sticky top-28 border-t-4 border-[#B48C00]">
               <h2 className="font-black text-xl mb-6 uppercase text-black">
                 {lang === "kh" ? "សរុបការកក់" : "Order Summary"}
               </h2>
- 
+
               <div className="space-y-4 mb-8">
                 {/* Food Subtotal */}
                 <div className="flex justify-between text-gray-500">
@@ -185,7 +180,7 @@ export default function CartPage({
                     ${subtotalFood.toFixed(2)}
                   </span>
                 </div>
- 
+
                 {/* Hall & Decor Fee */}
                 <div className="flex justify-between text-[#B48C00]">
                   <span className="text-sm">
@@ -194,7 +189,7 @@ export default function CartPage({
                   {/* ✅ បង្ហាញ HALL_FEE ពិតប្រាកដ */}
                   <span className="font-bold">+${HALL_FEE.toFixed(2)}</span>
                 </div>
- 
+
                 {/* Divider */}
                 <div className="border-t border-dashed border-gray-200 pt-4">
                   <div className="flex justify-between items-start">
@@ -212,7 +207,7 @@ export default function CartPage({
                   </div>
                 </div>
               </div>
- 
+
               {/* Book Now Button */}
               <button
                 onClick={handleProceedToBooking}
@@ -221,7 +216,7 @@ export default function CartPage({
               >
                 {lang === "kh" ? "កក់ឥឡូវនេះ" : "BOOK NOW"}
               </button>
- 
+
               {/* Item count info */}
               {cart.length > 0 && (
                 <p className="text-center text-gray-400 text-xs font-bold mt-4 uppercase">
@@ -232,8 +227,6 @@ export default function CartPage({
           </div>
         </div>
       </main>
- 
-      <Footer lang={"en"} />
     </div>
   );
 }

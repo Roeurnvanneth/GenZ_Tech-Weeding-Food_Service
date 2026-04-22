@@ -166,22 +166,38 @@ model CateringItem {
 // --- ផ្នែក Cart (កន្ត្រកទំនិញ) ---
 model Cart {
   id        Int        @id @default(autoincrement())
-  userId    Int?
-  user      User?      @relation(fields: [userId], references: [id])
-  sessionId String?     // សម្រាប់ភ្ញៀវដែលមិនទាន់ Login
+  userId    Int?       @unique  // One cart per user
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String?    @unique  // One cart per session (for guests)
   items     CartItem[]
   createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
+  @@map("carts")
 }
 
+// ========== CART ITEM MODEL ==========
 model CartItem {
   id              Int         @id @default(autoincrement())
   cartId          Int
   cart            Cart        @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  menu_pricing_id Int         // ភ្ជាប់ទៅ MenuPricing
+  menu_pricing_id Int
   menuPricing     MenuPricing @relation(fields: [menu_pricing_id], references: [id])
   quantity        Int         @default(1)
-  price           Decimal     @db.Decimal(10, 2) // តម្លៃនៅពេល Add
+  price           Float       // Use Float for easier calculations (or Decimal if you need exact)
+  // Or use Decimal: price Decimal @decimal(10, 2)
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([cartId, menu_pricing_id])  // Prevent duplicate items in same cart
+  @@index([cartId])
+  @@index([menu_pricing_id])
+  @@map("cart_items")
 }
+
 
 // --- ផ្នែក Booking (ការកក់) ---
 model Booking {
