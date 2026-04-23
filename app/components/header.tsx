@@ -3,28 +3,22 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Globe, LogOut, ChevronDown, User, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
-import { messages, Language } from '../i18n/messages'; // ពិនិត្យ Path នេះឱ្យត្រូវតាម Project បង
-import { useCart } from '../[locale]/context/CartContext'; // ពិនិត្យ Path នេះឱ្យត្រូវតាម Project បង
+import { useRouter, usePathname } from 'next/navigation'; // Added for language switching
+import { messages, Language } from '../i18n/messages'; 
+import { useCart } from '../[locale]/context/CartContext'; 
 
-interface HeaderProps {
-  lang: Language;
-  toggleLang: () => void;
-  isMenuOpen: boolean;
-  setIsMenuOpen: (open: boolean) => void;
-}
 
-export default function Header({
-  lang,
-  toggleLang,
-  isMenuOpen,
-  setIsMenuOpen
-}: HeaderProps) {
+export default function Header({ lang }: { lang: Language }) {
   const t = messages[lang];
-  const { totalItems } = useCart(); // យកតែចំនួន Item សរុបមកប្រើ (No Total Price)
+  const { totalItems } = useCart();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Internal State
   const [userData, setUserData] = useState<{ name: string } | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // Now handled internally
 
-  // ១. ទាញយកទិន្នន័យ User ពី localStorage ពេល Component បើកដំបូង
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -35,6 +29,14 @@ export default function Header({
       }
     }
   }, []);
+
+  // Logical Language Switcher for Static Export
+  const toggleLang = () => {
+    const newLang = lang === 'en' ? 'kh' : 'en';
+    // Replace the /en/ part of the URL with /kh/
+    const newPath = pathname.replace(`/${lang}`, `/${newLang}`);
+    router.push(newPath);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -57,12 +59,12 @@ export default function Header({
           </Link>
         </div>
 
-        {/* --- MENU (DESKTOP) --- */}
+        {/* --- NAVIGATION MENU (DESKTOP) --- */}
         <nav className="hidden md:flex flex-[2] justify-center items-center gap-10 text-black font-bold">
           {t.nav.map((item: any, index: number) => (
             <Link
               key={index}
-              href={`/${lang}/${item.path}`}
+              href={`/${lang}/${item.path}`} 
               className="hover:text-[#B99808] transition-colors whitespace-nowrap"
             >
               {item.label}
@@ -70,19 +72,17 @@ export default function Header({
           ))}
         </nav>
         
-        {/* --- ACTIONS (RIGHT) --- */}
+        {/* --- ACTIONS (RIGHT SIDE) --- */}
         <div className="hidden md:flex flex-1 items-center justify-end gap-6">
           
-          {/* Language Switch */}
           <button
             onClick={toggleLang}
             className="flex items-center gap-2 text-gray-500 font-bold hover:text-[#B99808] transition-all"
           >
             <Globe size={18} />
-            <span className="text-xs uppercase">{lang === 'kh' ? 'ខ្មែរ' : 'EN'}</span>
+            <span className="text-xs uppercase">{lang === 'kh' ? 'Kh' : 'EN'}</span>
           </button>
 
-          {/* --- ផ្នែកកន្ត្រកទំនិញ (CART ICON ONLY) --- */}
           <Link 
             href={`/${lang}/cart`} 
             className="relative p-2.5 bg-gray-50 rounded-full border border-gray-100 hover:bg-gray-100 transition-all group"
@@ -95,7 +95,6 @@ export default function Header({
             )}
           </Link>
 
-          {/* --- ផ្នែក USER LOGIN / PROFILE --- */}
           {userData ? (
             <div className="relative">
               <button 
@@ -124,7 +123,7 @@ export default function Header({
           ) : (
             <Link href={`/${lang}/customer-login`}>
               <button className="bg-[#B48C00] text-white px-7 py-2.5 rounded-full font-bold hover:bg-[#967500] transition-all shadow-md active:scale-95 text-sm uppercase tracking-wide">
-                {lang === 'kh' ? 'ចូលប្រើ' : 'Login'}
+                {lang === 'kh' ? 'ចូល' : 'Login'}
               </button>
             </Link>
           )}
@@ -136,7 +135,7 @@ export default function Header({
         </button>
       </div>
 
-      {/* --- MOBILE MENU --- */}
+      {/* --- MOBILE MENU CONTENT --- */}
       {isMenuOpen && (
         <div className="absolute top-20 left-0 w-full bg-white shadow-2xl md:hidden flex flex-col p-8 gap-6 border-t border-gray-50 animate-in fade-in slide-in-from-top-5 duration-300">
           {t.nav.map((item: any, index: number) => (
@@ -144,17 +143,21 @@ export default function Header({
               {item.label}
             </Link>
           ))}
+          
+          {/* Mobile Language Toggle */}
+          <button onClick={toggleLang} className="flex items-center gap-3 p-5 bg-gray-50 rounded-2xl border font-bold">
+            <Globe size={24} className="text-[#B48C00]" />
+            <span>{lang === 'kh' ? 'Switch to English' : 'ប្តូរទៅភាសាខ្មែរ'}</span>
+          </button>
 
-          {/* Cart Mobile */}
-          <Link href={`/${lang}/CartContext.tsx`} onClick={() => setIsMenuOpen(false)} className="flex justify-between items-center p-5 bg-gray-50 rounded-2xl border border-gray-100 font-bold">
+          <Link href={`/${lang}/cart`} onClick={() => setIsMenuOpen(false)} className="flex justify-between items-center p-5 bg-gray-50 rounded-2xl border border-gray-100 font-bold">
             <div className="flex items-center gap-3">
               <ShoppingCart size={24} className="text-[#B48C00]" />
               <span>{lang === 'kh' ? 'កន្ត្រកទំនិញ' : 'Your Cart'}</span>
             </div>
-            <span className="bg-[#B48C00] text-white px-4 py-1 rounded-full text-sm">{totalItems} Items</span>
+            <span className="bg-[#B48C00] text-white px-4 py-1 rounded-full text-sm">{totalItems}</span>
           </Link>
 
-          {/* User Mobile */}
           <div className="flex flex-col gap-4 mt-2">
             {userData ? (
               <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-4 bg-red-50 text-red-600 font-bold rounded-2xl border border-red-100">
@@ -163,7 +166,7 @@ export default function Header({
             ) : (
               <Link href={`/${lang}/customer-login`} onClick={() => setIsMenuOpen(false)}>
                 <button className="w-full py-4 bg-[#B48C00] text-white font-bold rounded-2xl shadow-md uppercase">
-                  {lang === 'kh' ? 'ចូលប្រើឥឡូវនេះ' : 'Login Now'}
+                  {t.button}
                 </button>
               </Link>
             )}
