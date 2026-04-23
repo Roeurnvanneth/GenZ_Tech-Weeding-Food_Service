@@ -61,6 +61,8 @@ model Product {
 
 model TeamMember {
   id           Int      @id @default(autoincrement())
+ name  String  @default("")
+role  String  @default("")
   slug         String   @unique
   image        String
   translations Json
