@@ -10,11 +10,9 @@ interface HomePageProps {
 }
 
 export default function HomePageContent({ lang }: HomePageProps) {
-  // 1. Cast the locale to your Language type
   const currentLang = (lang === 'kh' ? 'kh' : 'en') as Language;
   const t = messages[currentLang];
 
-  // 2. Local State for user data
   const [user, setUser] = useState<{ name: string } | null>(null);
 
   useEffect(() => {
@@ -28,23 +26,24 @@ export default function HomePageContent({ lang }: HomePageProps) {
     }
   }, []);
 
+  // កែសម្រួល href ឱ្យទៅកាន់ទំព័រ food ទាំងអស់គ្នា
   const catering = [
     {
       src: "/bd.jpg",
       label: t.factory,
-      href: `/${currentLang}/services/factory`,
+      href: `/${currentLang}/food`, // ផ្លាស់ប្តូរពី factory ទៅ food
       className: "font-bold"
     },
     {
       src: "/Festive.webp",
       label: t.food,
-      href: `/${currentLang}/services/food`,
+      href: `/${currentLang}/food`, // ផ្លាស់ប្តូរពី food ទៅ food
       className: "font-bold"
     },
     {
       src: "/wedding.jpg",
       label: t.both,
-      href: `/${currentLang}/services/both`,
+      href: `/${currentLang}/food`, // ផ្លាស់ប្តូរពី both ទៅ food
       className: "font-bold"
     },
   ];

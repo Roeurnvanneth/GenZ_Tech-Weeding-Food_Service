@@ -13,6 +13,7 @@ model User {
   name         String?
   phone        String    @unique
   role         Role      @default(USER)
+  carts    Cart[]
   otpCode      String?
   otpExpiry    DateTime?
   refreshToken String?
@@ -67,45 +68,7 @@ model TeamMember {
   updatedAt    DateTime @updatedAt
 }
 
-// --- BOOKING SYSTEM ---
-model Booking {
-  id           Int    @id @default(autoincrement())
-  // ព័ត៌មានអតិថិជន
-  customerName String
-  phoneNumber  String
-  userId       Int? // ភ្ជាប់ទៅ User Table (Optional)
-  user         User?  @relation(fields: [userId], references: [id])
 
-  // ព័ត៌មានកម្មវិធី
-  programType   String
-  programDate   String
-  programTime   String?
-  startDateTime String?
-  endDateTime   String?
-  event_date    DateTime // សម្រាប់ Sort តាម Calendar ក្នុង Backend
-
-  // ទីតាំង និង ចំនួនភ្ញៀវ
-  location      String
-  guestCount    Int
-  contactMethod String?
-
-  // សេវាកម្មបន្ថែម
-  hasFood     Boolean @default(false)
-  hasTent     Boolean @default(false)
-  serviceType String
-
-  // ផ្នែកតម្លៃ និង ការទូទាត់
-  totalPrice Decimal @db.Decimal(10, 2)
-  status     String  @default("Pending") // Pending, Confirmed, Cancelled
-
-  // ទំនាក់ទំនងជាមួយ Catering
-  catering_id  Int?
-  catering     Catering?     @relation(fields: [catering_id], references: [id])
-  bookingItems BookingItem[]
-
-  translations Json? // { kh: { name }, en: { name } }
-  createdAt    DateTime @default(now())
-}
 
 // --- CATERING & MENU SYSTEM ---
 model EventType {
@@ -149,8 +112,12 @@ model MenuPricing {
   status         String        @default("active")
   effective_from DateTime      @default(now())
   menu           Menu          @relation(fields: [menu_id], references: [id], onDelete: Cascade)
+  cartItems    CartItem[]
+  price        Decimal       @db.Decimal(10, 2)
   bookingItems   BookingItem[]
 }
+
+
 
 model CateringStandard {
   id        Int        @id @default(autoincrement())
@@ -159,28 +126,27 @@ model CateringStandard {
 }
 
 model Catering {
-  catering_name   String           // <--- បើវាអត់មានបន្ទាត់នេះទេ គឺប្រើវាមិនបានឡើយ
-  event_name        String           // <--- បើវាអត់មានបន្ទាត់នេះទេ គឺប្រើវាមិនបានឡើយ
-  id          Int     @id @default(autoincrement())
-  name        String // ឈ្មោះឈុត ឧទាហរណ៍: "Wedding Gold Package"
+  id          Int      @id @default(autoincrement())
+  name        String   // ឈ្មោះឈុត ឧទាហរណ៍: "Wedding Gold Package"
   description String?
-  total_price Decimal @db.Decimal(10, 2)
-  menuId     Json    // [1, 2, 3] - List of Menu IDs in this Catering Set
+  totalPrice  Decimal  @db.Decimal(10, 2) @map("total_price")
 
-  // តភ្ជាប់ទៅ Standard (Gold, Silver...)
-  catering_standard_id Int
-  standard             CateringStandard @relation(fields: [catering_standard_id], references: [id])
+  // ការតភ្ជាប់ទៅ Standard (Gold, Silver...)
+  cateringStandardId Int              @map("catering_standard_id")
+  standard           CateringStandard @relation(fields: [cateringStandardId], references: [id])
 
-  // តភ្ជាប់ទៅ EventType (Wedding, Funeral...)
-  eventTypeId Int
+  // ការតភ្ជាប់ទៅ EventType (Wedding, Funeral...)
+  eventTypeId Int       @map("event_type_id")
   eventType   EventType @relation(fields: [eventTypeId], references: [id])
 
-  // បញ្ជីម្ហូបក្នុងឈុតនេះ
+  // ទំនាក់ទំនងជាមួយ Items និង Bookings
   items    CateringItem[]
   bookings Booking[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("caterings")
 }
 
 model CateringItem {
@@ -197,13 +163,74 @@ model CateringItem {
 
   @@unique([cateringId, menuId])
 }
+// --- ផ្នែក Cart (កន្ត្រកទំនិញ) ---
+model Cart {
+  id        Int        @id @default(autoincrement())
+  userId    Int?       @unique  // One cart per user
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String?    @unique  // One cart per session (for guests)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
+  @@map("carts")
+}
+
+// ========== CART ITEM MODEL ==========
+model CartItem {
+  id              Int         @id @default(autoincrement())
+  cartId          Int
+  cart            Cart        @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  menu_pricing_id Int
+  menuPricing     MenuPricing @relation(fields: [menu_pricing_id], references: [id])
+  quantity        Int         @default(1)
+  price           Float       // Use Float for easier calculations (or Decimal if you need exact)
+  // Or use Decimal: price Decimal @decimal(10, 2)
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([cartId, menu_pricing_id])  // Prevent duplicate items in same cart
+  @@index([cartId])
+  @@index([menu_pricing_id])
+  @@map("cart_items")
+}
+
+
+// --- ផ្នែក Booking (ការកក់) ---
+model Booking {
+  id            Int           @id @default(autoincrement())
+  customerName  String   
+  phoneNumber   String    
+  userId        Int?
+  user          User?      @relation(fields: [userId], references: [id])
+  
+  // ព័ត៌មានកម្មវិធី
+  programDate   DateTime
+  event_date    DateTime
+  startDateTime DateTime?
+  endDateTime   DateTime?
+  
+  location      String
+  guestCount    Int
+  totalPrice    Decimal       @db.Decimal(10, 2)
+  status        String        @default("Pending")
+
+  catering_id   Int?
+  catering      Catering?     @relation(fields: [catering_id], references: [id])
+  bookingItems  BookingItem[]
+  
+  createdAt     DateTime      @default(now())
+}
+
 model BookingItem {
   id              Int         @id @default(autoincrement())
   booking_id      Int
-  menu_pricing_id Int
-  quantity        Int         @default(1)
   booking         Booking     @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  menu_pricing_id Int
   menuPricing     MenuPricing @relation(fields: [menu_pricing_id], references: [id])
-
-  // បើប្អូនចង់ឱ្យភ្ញៀវកុម្ម៉ង់ម្ហូបបន្ថែមក្រៅពីឈុត ក៏ប្រើ Table នេះបានដែរ
+  quantity        Int         @default(1)
+  price           Decimal     @db.Decimal(10, 2)
 }
