@@ -38,7 +38,7 @@ export default function VerifyOTP() {
 
       if (res.ok) {
         alert("✅ ចូលប្រើប្រាស់ជោគជ័យ!");
-        router.push(`/kh/dashboard`); 
+        router.push(`/dashboard`);  // ✅ ឬប្រើ dynamic locale
       } else {
         alert("❌ លេខកូដមិនត្រឹមត្រូវ");
       }

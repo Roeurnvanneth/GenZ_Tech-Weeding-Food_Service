@@ -1,24 +1,24 @@
-import "../globals.css";
-import { CartProvider } from '../[locale]/context/CartContext';
+// import "./globals.css";
+import { CartProvider } from "./context/CartContext"; // Adjust path if needed
+import Header from "../components/header";
+import Footer from "../components/footer";
 
-// Add 'async' here
-export default async function RootLayout({
+
+export default async function LocaleLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>; // Change to Promise
+  params: Promise<{ locale: string }>;
 }) {
-  // Add 'await' here
   const { locale } = await params;
 
+  // No <html> or <body> here!
   return (
-    <html lang={locale}>
-      <body className="antialiased" suppressHydrationWarning={true}>
-        <CartProvider>
-            {children}
-        </CartProvider>  
-      </body>
-    </html>
+    <CartProvider>
+      <Header lang={locale as any} />
+      <main>{children}</main>
+      <Footer lang={locale as any} />
+    </CartProvider>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import React from 'react';
+import React, { use } from 'react';
 import { X, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
+import { messages } from '../i18n/messages';
 
 interface CartNotificationProps {
   isOpen: boolean;
@@ -14,7 +15,7 @@ interface CartNotificationProps {
 
 export default function CartNotification({ isOpen, onClose, product, lang, totalItems }: CartNotificationProps) {
   if (!isOpen || !product) return null;
-
+  const t = messages[lang as keyof typeof messages];
   return (
     <>
       {/* Background Overlay */}
@@ -27,7 +28,7 @@ export default function CartNotification({ isOpen, onClose, product, lang, total
           <div className="flex justify-between items-start mb-6">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="text-green-500" size={24} />
-              <span className="font-bold text-lg text-black">Added to Bag</span>
+              <span className="font-bold text-lg text-black">{t.atb}</span>
             </div>
             <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
               <X size={20} className="text-gray-500" />
@@ -41,7 +42,7 @@ export default function CartNotification({ isOpen, onClose, product, lang, total
             </div>
             <div className="flex-1">
               <h3 className="font-bold text-black text-lg line-clamp-1">{product.menu_name}</h3>
-              <p className="text-gray-400 text-sm mt-1">Quantity: 1</p>
+              <p className="text-gray-400 text-sm mt-1">{t.Quantity1}</p>
               <p className="font-black text-lg mt-1">${product.price_usd.toFixed(2)}</p>
             </div>
           </div>
@@ -50,7 +51,7 @@ export default function CartNotification({ isOpen, onClose, product, lang, total
           <div className="space-y-3">
             <Link href={`/${lang}/cart`} className="block">
               <button className="w-full py-4 border-2 border-gray-100 rounded-full font-bold text-black hover:border-black transition-all">
-                View Bag ({totalItems})
+                {t.vb} ({totalItems})
               </button>
             </Link>
             <Link href={`/${lang}/booking`} className="block">
