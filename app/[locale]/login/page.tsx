@@ -55,7 +55,7 @@ export default function LoginPage() {
         {/* ផ្នែកខាងស្តាំ - រូបភាព (បង្ហាញខាងលើនៅពេលប្រើទូរស័ព្ទ) */}
         <div className="relative h-[35vh] w-full md:h-auto md:w-1/2 md:order-2">
           <img 
-            src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80" 
+            src="/bh.jpg" 
             alt="Team" 
             className="h-full w-full object-cover grayscale-[20%]"
           />

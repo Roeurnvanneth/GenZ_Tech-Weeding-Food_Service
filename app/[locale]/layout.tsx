@@ -1,9 +1,8 @@
-import "../globals.css";
+// import "./globals.css";
 import { CartProvider } from "./context/CartContext"; // Adjust path if needed
 import Header from "../components/header";
 import Footer from "../components/footer";
 
-// app/[locale]/layout.tsx
 
 export default async function LocaleLayout({
   children,

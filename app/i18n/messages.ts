@@ -1,6 +1,7 @@
 // app/i18n/messages.ts
 export type Language = "en" | "kh";
 
+
 export const messages = {
   en: {
     nav: [
@@ -9,7 +10,10 @@ export const messages = {
       { label: "Food", path: "food" },
       { label: "Booking", path: "booking" },
       { label: "Contact", path: "contact" },
+
+      
     ],
+    
     button: "Login",
     logout: "Logout",
     loading: "LOADING DATA...",

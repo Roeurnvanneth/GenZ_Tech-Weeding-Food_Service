@@ -12,13 +12,12 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
-import { messages, Language } from "../i18n/messages"; // ពិនិត្យ Path នេះឱ្យត្រូវតាម Project បង
-import { useCart } from "../[locale]/context/CartContext"; // ពិនិត្យ Path នេះឱ្យត្រូវតាម Project បង
-
+import { messages, Language } from "../i18n/messages";
+import { useCart } from "../[locale]/context/CartContext";
 
 export default function Header({ lang }: { lang: Language }) {
   const t = messages[lang];
-  const { totalItems } = useCart(); // យកតែចំនួន Item សរុបមកប្រើ (No Total Price)
+  const { totalItems } = useCart();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -37,10 +36,8 @@ export default function Header({ lang }: { lang: Language }) {
     }
   }, []);
 
-  // Logical Language Switcher for Static Export
   const toggleLang = () => {
     const newLang = lang === "en" ? "kh" : "en";
-    // Replace the /en/ part of the URL with /kh/
     const newPath = pathname.replace(`/${lang}`, `/${newLang}`);
     router.push(newPath);
   };
@@ -67,10 +64,10 @@ export default function Header({ lang }: { lang: Language }) {
 
         {/* --- NAVIGATION MENU (DESKTOP) --- */}
         <nav className="hidden md:flex flex-[2] justify-center items-center gap-10 text-black font-bold">
-          {t.nav.map((item: any, index: number) => (
-            <Link
+          {t.nav.map((item: any, index: number) => ( 
+            <Link   
               key={index}
-              href={`/${lang}/${item.path}`} 
+              href={`/${lang}/${item.path}`}  
               className="hover:text-[#B99808] transition-colors whitespace-nowrap"
             >
               {item.label}
@@ -91,7 +88,7 @@ export default function Header({ lang }: { lang: Language }) {
             </span>
           </button>
 
-          {/* --- ផ្នែកកន្ត្រកទំនិញ (CART ICON ONLY) --- */}
+          {/* --- CART ICON --- */}
           <Link
             href={`/${lang}/cart`}
             className="relative p-2.5 bg-gray-50 rounded-full border border-gray-100 hover:bg-gray-100 transition-all group"
@@ -173,9 +170,9 @@ export default function Header({ lang }: { lang: Language }) {
             <span>{lang === 'kh' ? 'Switch to English' : 'ប្តូរទៅភាសាខ្មែរ'}</span>
           </button>
 
-          {/* Cart Mobile */}
+          {/* Cart Mobile - FIXED: Changed from CartContext.tsx to cart */}
           <Link
-            href={`/${lang}/CartContext.tsx`}
+            href={`/${lang}/cart`}
             onClick={() => setIsMenuOpen(false)}
             className="flex justify-between items-center p-5 bg-gray-50 rounded-2xl border border-gray-100 font-bold"
           >
