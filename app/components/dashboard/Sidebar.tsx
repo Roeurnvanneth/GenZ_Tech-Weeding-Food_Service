@@ -55,11 +55,31 @@ export default function Sidebar() {
           icon: <Package size={22} />,
           href: `/${locale}/dashboard/products`,
         },
+        {
+          name: "បញ្ជីមុខម្ហូប (Menus)",
+          icon: <ChefHat size={22} />,
+          href: `/${locale}/dashboard/menus`,
+        },
+        {
+          name: "សេវាកម្មម្ហូបអាហារ",
+          icon: <UtensilsCrossed size={22} />,
+          href: `/${locale}/dashboard/caterings`,
+        },
       ],
     },
     {
       group: "ការគ្រប់គ្រងទូទៅ",
       items: [
+        {
+          name: "ប្រភេទកម្មវិធី",
+          icon: <PartyPopper size={22} />,
+          href: `/${locale}/dashboard/event-types`,
+        },
+        {
+          name: "ស្តង់ដារសេវាកម្ម",
+          icon: <ShieldCheck size={22} />,
+          href: `/${locale}/dashboard/standards`,
+        },
         {
           name: "ក្រុមការងារ",
           icon: <Users size={22} />,
