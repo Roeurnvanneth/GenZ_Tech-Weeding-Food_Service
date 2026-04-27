@@ -4,22 +4,19 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // url      = env("DATABASE_URL")
 }
 
-// --- USER MANAGEMENT ---
 model User {
   id           Int       @id @default(autoincrement())
   name         String?
   phone        String    @unique
   role         Role      @default(USER)
-  carts    Cart[]
   otpCode      String?
   otpExpiry    DateTime?
   refreshToken String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  bookings     Booking[] // ភ្ជាប់ទៅកាន់ការកក់របស់ User ម្នាក់ៗ
 }
 
 enum Role {
@@ -27,42 +24,10 @@ enum Role {
   USER
 }
 
-// --- PRODUCT & CATEGORY ---
-model Category {
-  id           Int       @id @default(autoincrement())
-  description  String?
-  name         String
-  slug         String    @unique
-  isPoppular   Boolean   @default(false)
-  translations Json
-  products     Product[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  menus Menu[]
-}
-
-model Product {
-  id           Int      @id @default(autoincrement())
-  title        String
-  price        Float    @default(0)
-  slug         String   @unique
-  maxPrice     Float    @default(0)
-  hallPrice    Float    @default(0)
-  isPoppular   Boolean  @default(false)
-  videoUrl     String?
-  images       Json
-  translations Json
-  categoryId   Int
-  category     Category @relation(fields: [categoryId], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
 model TeamMember {
   id           Int      @id @default(autoincrement())
- name  String  @default("")
-role  String  @default("")
+  name  String  @default("")
+  role  String  @default("")
   slug         String   @unique
   image        String
   translations Json
@@ -72,167 +37,79 @@ role  String  @default("")
 
 
 
-// --- CATERING & MENU SYSTEM ---
+
 model EventType {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-
-  // នេះជាអ្វីដែលប្អូនមានរួចហើយ
-  cateringItems CateringItem[]
-
-  // ប្រសិនបើប្អូនចង់ឱ្យ Catering ផ្ទាល់ភ្ជាប់ទៅ EventType ដែរ (Optional)
-  caterings Catering[]
-}
-
-model Menu {
-  id        Int     @id @default(autoincrement())
-  menu_name String
-  image     String? @default("default-food.jpg")
-  price_usd Decimal @default(0) @db.Decimal(10, 2)
-  price_khr Decimal @default(0) @db.Decimal(10, 2)
-  status    String  @default("active")
-
-  // ការតភ្ជាប់ទៅ Category
-  categoryId Int
-  category   Category @relation(fields: [categoryId], references: [id])
+  id                   Int                 @id @default(autoincrement())
+  event_type_name_en   String
+  event_type_name_kh   String
+  cover_image                 String?
 
   // Relations
-  pricings      MenuPricing[]
-  cateringItems CateringItem[] // ម្ហូបមួយមុខ អាចនៅក្នុង Catering ច្រើន
+  cateringStandards    CateringStandard[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
 }
-
-// --- CATERING & EVENT SYSTEM ---
-
-model MenuPricing {
-  id             Int           @id @default(autoincrement())
-  menu_id        Int
-  price_usd      Decimal       @db.Decimal(10, 2)
-  price_khr      Decimal       @db.Decimal(10, 2)
-  status         String        @default("active")
-  effective_from DateTime      @default(now())
-  menu           Menu          @relation(fields: [menu_id], references: [id], onDelete: Cascade)
-  cartItems    CartItem[]
-  price        Decimal       @db.Decimal(10, 2)
-  bookingItems   BookingItem[]
-}
-
-
 
 model CateringStandard {
-  id        Int        @id @default(autoincrement())
-  name      String     @unique
-  caterings Catering[]
+  id                          Int                       @id @default(autoincrement())
+  event_type_id               Int
+  catering_standard_name_en   String
+  catering_standard_name_kh   String
+  cover_image                 String?
+  is_special                  Boolean                   @default(false)
+  description                 String?
+
+  // Relations
+  eventType                   EventType                 @relation(fields: [event_type_id], references: [id], onDelete: Cascade)
+  items                       CateringStandardItem[]
+
+  createdAt                   DateTime                  @default(now())
+  updatedAt                   DateTime                  @updatedAt
+
+  @@index([event_type_id])
 }
 
-model Catering {
-  id          Int      @id @default(autoincrement())
-  name        String   // ឈ្មោះឈុត ឧទាហរណ៍: "Wedding Gold Package"
-  description String?
-  totalPrice  Decimal  @db.Decimal(10, 2) @map("total_price")
+model CateringStandardItem {
+  id                     Int             @id @default(autoincrement())
+  catering_standard_id   Int
+  menu_item_id           Int
+  price_usd              Float
+  price_khr              Float
 
-  // ការតភ្ជាប់ទៅ Standard (Gold, Silver...)
-  cateringStandardId Int              @map("catering_standard_id")
-  standard           CateringStandard @relation(fields: [cateringStandardId], references: [id])
+  // Relations
+  cateringStandard       CateringStandard @relation(fields: [catering_standard_id], references: [id], onDelete: Cascade)
+  menuItem               MenuItem         @relation(fields: [menu_item_id], references: [id], onDelete: Cascade)
 
-  // ការតភ្ជាប់ទៅ EventType (Wedding, Funeral...)
-  eventTypeId Int       @map("event_type_id")
-  eventType   EventType @relation(fields: [eventTypeId], references: [id])
+  createdAt              DateTime         @default(now())
 
-  // ទំនាក់ទំនងជាមួយ Items និង Bookings
-  items    CateringItem[]
-  bookings Booking[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("caterings")
+  // Prevent duplicate same menu in same set
+  @@unique([catering_standard_id, menu_item_id])
 }
 
-model CateringItem {
-  id           Int      @id @default(autoincrement())
-  
-  cateringId   Int      // ប្រើ camelCase ឱ្យដូចក្នុងកូដ
-  catering     Catering @relation(fields: [cateringId], references: [id], onDelete: Cascade)
+model MenuItem {
+  id                     Int                     @id @default(autoincrement())
+  menu_item_name_en      String
+  menu_item_name_kh      String
+  cover_image                 String?
 
-  menuId       Int      // ប្រើ camelCase ឱ្យដូចក្នុងកូដ
-  menu         Menu     @relation(fields: [menuId], references: [id])
+  // Relations
+  cateringItems          CateringStandardItem[]
+  gallery                MenuItemGallery[]
 
-  eventTypeId  Int
-  eventType    EventType @relation(fields: [eventTypeId], references: [id])
-
-  @@unique([cateringId, menuId])
-}
-// --- ផ្នែក Cart (កន្ត្រកទំនិញ) ---
-model Cart {
-  id        Int        @id @default(autoincrement())
-  userId    Int?       @unique  // One cart per user
-  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessionId String?    @unique  // One cart per session (for guests)
-  items     CartItem[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  @@index([userId])
-  @@index([sessionId])
-  @@map("carts")
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
 }
 
-// ========== CART ITEM MODEL ==========
-model CartItem {
-  id              Int         @id @default(autoincrement())
-  cartId          Int
-  cart            Cart        @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  menu_pricing_id Int
-  menuPricing     MenuPricing @relation(fields: [menu_pricing_id], references: [id])
-  quantity        Int         @default(1)
-  price           Float       // Use Float for easier calculations (or Decimal if you need exact)
-  // Or use Decimal: price Decimal @decimal(10, 2)
-  
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+model MenuItemGallery {
+  id            Int       @id @default(autoincrement())
+  menu_item_id  Int
+  image        String?
 
-  @@unique([cartId, menu_pricing_id])  // Prevent duplicate items in same cart
-  @@index([cartId])
-  @@index([menu_pricing_id])
-  @@map("cart_items")
-}
+  // Relations
+  menuItem      MenuItem  @relation(fields: [menu_item_id], references: [id], onDelete: Cascade)
 
+  createdAt     DateTime  @default(now())
 
-// --- ផ្នែក Booking (ការកក់) ---
-model Booking {
-  id            Int           @id @default(autoincrement())
-  customerName  String   
-  phoneNumber   String    
-  userId        Int?
-  user          User?      @relation(fields: [userId], references: [id])
-  
-  // ព័ត៌មានកម្មវិធី
-  programDate   DateTime
-  event_date    DateTime
-  startDateTime DateTime?
-  endDateTime   DateTime?
-  
-  location      String
-  guestCount    Int
-  totalPrice    Decimal       @db.Decimal(10, 2)
-  status        String        @default("Pending")
-
-  catering_id   Int?
-  catering      Catering?     @relation(fields: [catering_id], references: [id])
-  bookingItems  BookingItem[]
-  
-  createdAt     DateTime      @default(now())
-}
-
-model BookingItem {
-  id              Int         @id @default(autoincrement())
-  booking_id      Int
-  booking         Booking     @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  menu_pricing_id Int
-  menuPricing     MenuPricing @relation(fields: [menu_pricing_id], references: [id])
-  quantity        Int         @default(1)
-  price           Decimal     @db.Decimal(10, 2)
+  @@index([menu_item_id])
 }
