@@ -7,7 +7,7 @@ export const messages = {
     nav: [
       { label: "Home", path: "" },
       { label: "About", path: "about" },
-      { label: "Food", path: "food" },
+      { label: "Catering", path: "catering" },
       { label: "Booking", path: "booking" },
       { label: "Contact", path: "contact" },
 
@@ -115,7 +115,7 @@ export const messages = {
     nav: [
       { label: "ទំព័រដើម", path: "" },
       { label: "អំពីយើង", path: "about" },
-      { label: "មុខម្ហូប", path: "food" },
+      { label: "មុខម្ហូប", path: "catering" },
       { label: "ការកក់", path: "booking" },
       { label: "ទំនាក់ទំនង", path: "contact" },
     ],
