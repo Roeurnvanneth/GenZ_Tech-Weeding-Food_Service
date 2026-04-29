@@ -3,13 +3,29 @@ import { prisma } from "@/lib/prisma"; // Adjust this path to your prisma client
 
 export async function GET() {
   try {
-    const categories = await prisma.category.findMany({ 
-      orderBy: { id: 'asc' },
-      include: { _count: { select: { menus: true } } } // បន្ថែមដើម្បីដឹងថាមានម្ហូបប៉ុន្មានក្នុង Category នីមួយៗ
+    const categories = await prisma.category.findMany({
+      include: {
+        products: true, // must match schema relation name
+      },
+      orderBy: {
+        id: "desc",
+      },
     });
-    return NextResponse.json({ success: true, data: categories });
+
+    return NextResponse.json({
+      success: true,
+      data: categories,
+    });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error("CATEGORY ERROR:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message,
+      },
+      { status: 500 }
+    );
   }
 }
 

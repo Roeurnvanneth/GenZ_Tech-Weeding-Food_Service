@@ -5,73 +5,107 @@ import jwt from "jsonwebtoken";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { phone, name, idToken } = body;
+    const { phone, name } = body;
 
-    // 1. Validation: Ensure we have the minimum data
-    if (!phone || !idToken) {
+    // =========================
+    // 1. VALIDATION
+    // =========================
+    if (!phone) {
       return NextResponse.json(
-        { success: false, error: "Phone number and verification token are required" },
+        { success: false, error: "Phone is required" },
         { status: 400 }
       );
     }
 
-    // 2. Define Admin Phone (Change this to your real phone number)
+    // =========================
+    // 2. ADMIN CONFIG
+    // =========================
     const ADMIN_PHONE = "012345678";
 
-    // 3. UPSERT: If user exists, update them. If not, create them.
-    // This handles both Login and Registration in one step.
-    const user = await prisma.user.upsert({
-      where: { phone: phone },
-      update: { 
-        name: name || undefined, // Update name only if provided
-        role: phone === ADMIN_PHONE ? "ADMIN" : undefined 
-      },
-      create: {
-        phone: phone,
-        name: name || "New Customer",
-        role: phone === ADMIN_PHONE ? "ADMIN" : "USER",
-      },
+    // =========================
+    // 3. FIND USER FIRST
+    // =========================
+    let user = await prisma.user.findUnique({
+      where: { phone },
     });
 
-    // 4. Create JWT Tokens
-    // Access Token: Short-lived (e.g., for API calls)
+    // =========================
+    // 4. AUTO REGISTER IF NOT EXISTS
+    // =========================
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          phone,
+          name: name || "New User",
+          role: phone === ADMIN_PHONE ? "ADMIN" : "USER",
+        },
+      });
+    }
+
+    // =========================
+    // 5. ENSURE ROLE IS ALWAYS SAFE
+    // =========================
+    if (user.role !== "ADMIN") {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { role: "USER" },
+      });
+    }
+
+    // =========================
+    // 6. CREATE JWT TOKENS
+    // =========================
     const accessToken = jwt.sign(
-      { userId: user.id, role: user.role },
-      process.env.JWT_SECRET || "your_access_secret_123",
+      {
+        userId: user.id,
+        phone: user.phone,
+        role: user.role,
+      },
+      process.env.JWT_SECRET as string,
       { expiresIn: "7d" }
     );
 
-    // Refresh Token: Long-lived (to keep user logged in)
     const refreshToken = jwt.sign(
       { userId: user.id },
-      process.env.REFRESH_TOKEN_SECRET || "your_refresh_secret_456",
+      process.env.REFRESH_TOKEN_SECRET as string,
       { expiresIn: "30d" }
     );
 
-    // 5. Save the refresh token to the database
-    const updatedUser = await prisma.user.update({
+    // =========================
+    // 7. SAVE REFRESH TOKEN (DB ONLY)
+    // =========================
+    await prisma.user.update({
       where: { id: user.id },
       data: { refreshToken },
     });
 
-    // 6. Return response (Don't send the secret refresh token in the 'user' object)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { refreshToken: _, ...safeUserData } = updatedUser;
+    // =========================
+    // 8. SAFE RESPONSE (NO SECRET LEAK)
+    // =========================
+    const { refreshToken: _, ...safeUser } = user;
 
-    return NextResponse.json({
-      success: true,
-      message: safeUserData.role === "ADMIN" ? "Welcome Admin!" : "Login successful",
-      data: {
-        user: safeUserData,
-        accessToken,
-        refreshToken,
-      },
-    }, { status: 200 });
-
-  } catch (error: any) {
-    console.error("Login Error:", error);
     return NextResponse.json(
-      { success: false, error: "Authentication failed", details: error.message },
+      {
+        success: true,
+        message:
+          user.role === "ADMIN"
+            ? "Welcome Admin"
+            : "Login successful",
+        data: {
+          user: safeUser,
+          accessToken,
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("AUTH ERROR:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Authentication failed",
+      },
       { status: 500 }
     );
   }

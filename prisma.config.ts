@@ -5,9 +5,10 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
-    seed: "tsx ./prisma/seed.ts", // ← this line
+    seed: "tsx ./prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // FIX: Add '!' (non-null assertion) or a fallback string
+    url: process.env.DATABASE_URL!, 
   },
 });

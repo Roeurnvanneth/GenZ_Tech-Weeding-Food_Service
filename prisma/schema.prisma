@@ -2,6 +2,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -29,6 +30,9 @@ enum Role {
 
 // --- PRODUCT & CATEGORY ---
 model Category {
+
+   bookings     Booking[]
+  bookingItems BookingItem[]
   id           Int       @id @default(autoincrement())
   description  String?
   name         String
@@ -39,10 +43,11 @@ model Category {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  menus Menu[]
 }
 
-model Product {
+model Product {  
+  bookings     Booking[]
+  bookingItems BookingItem[]
   id           Int      @id @default(autoincrement())
   title        String
   price        Float    @default(0)
@@ -72,99 +77,7 @@ role  String  @default("")
 
 
 
-// --- CATERING & MENU SYSTEM ---
-model EventType {
-  id   Int    @id @default(autoincrement())
-  name String @unique
 
-  // នេះជាអ្វីដែលប្អូនមានរួចហើយ
-  cateringItems CateringItem[]
-
-  // ប្រសិនបើប្អូនចង់ឱ្យ Catering ផ្ទាល់ភ្ជាប់ទៅ EventType ដែរ (Optional)
-  caterings Catering[]
-}
-
-model Menu {
-  id        Int     @id @default(autoincrement())
-  menu_name String
-  image     String? @default("default-food.jpg")
-  price_usd Decimal @default(0) @db.Decimal(10, 2)
-  price_khr Decimal @default(0) @db.Decimal(10, 2)
-  status    String  @default("active")
-
-  // ការតភ្ជាប់ទៅ Category
-  categoryId Int
-  category   Category @relation(fields: [categoryId], references: [id])
-
-  // Relations
-  pricings      MenuPricing[]
-  cateringItems CateringItem[] // ម្ហូបមួយមុខ អាចនៅក្នុង Catering ច្រើន
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// --- CATERING & EVENT SYSTEM ---
-
-model MenuPricing {
-  id             Int           @id @default(autoincrement())
-  menu_id        Int
-  price_usd      Decimal       @db.Decimal(10, 2)
-  price_khr      Decimal       @db.Decimal(10, 2)
-  status         String        @default("active")
-  effective_from DateTime      @default(now())
-  menu           Menu          @relation(fields: [menu_id], references: [id], onDelete: Cascade)
-  cartItems    CartItem[]
-  price        Decimal       @db.Decimal(10, 2)
-  bookingItems   BookingItem[]
-}
-
-
-
-model CateringStandard {
-  id        Int        @id @default(autoincrement())
-  name      String     @unique
-  caterings Catering[]
-}
-
-model Catering {
-  id          Int      @id @default(autoincrement())
-  name        String   // ឈ្មោះឈុត ឧទាហរណ៍: "Wedding Gold Package"
-  description String?
-  totalPrice  Decimal  @db.Decimal(10, 2) @map("total_price")
-
-  // ការតភ្ជាប់ទៅ Standard (Gold, Silver...)
-  cateringStandardId Int              @map("catering_standard_id")
-  standard           CateringStandard @relation(fields: [cateringStandardId], references: [id])
-
-  // ការតភ្ជាប់ទៅ EventType (Wedding, Funeral...)
-  eventTypeId Int       @map("event_type_id")
-  eventType   EventType @relation(fields: [eventTypeId], references: [id])
-
-  // ទំនាក់ទំនងជាមួយ Items និង Bookings
-  items    CateringItem[]
-  bookings Booking[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("caterings")
-}
-
-model CateringItem {
-  id           Int      @id @default(autoincrement())
-  
-  cateringId   Int      // ប្រើ camelCase ឱ្យដូចក្នុងកូដ
-  catering     Catering @relation(fields: [cateringId], references: [id], onDelete: Cascade)
-
-  menuId       Int      // ប្រើ camelCase ឱ្យដូចក្នុងកូដ
-  menu         Menu     @relation(fields: [menuId], references: [id])
-
-  eventTypeId  Int
-  eventType    EventType @relation(fields: [eventTypeId], references: [id])
-
-  @@unique([cateringId, menuId])
-}
 // --- ផ្នែក Cart (កន្ត្រកទំនិញ) ---
 model Cart {
   id        Int        @id @default(autoincrement())
@@ -185,8 +98,6 @@ model CartItem {
   id              Int         @id @default(autoincrement())
   cartId          Int
   cart            Cart        @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  menu_pricing_id Int
-  menuPricing     MenuPricing @relation(fields: [menu_pricing_id], references: [id])
   quantity        Int         @default(1)
   price           Float       // Use Float for easier calculations (or Decimal if you need exact)
   // Or use Decimal: price Decimal @decimal(10, 2)
@@ -194,45 +105,61 @@ model CartItem {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  @@unique([cartId, menu_pricing_id])  // Prevent duplicate items in same cart
   @@index([cartId])
-  @@index([menu_pricing_id])
   @@map("cart_items")
 }
 
 
-// --- ផ្នែក Booking (ការកក់) ---
 model Booking {
   id            Int           @id @default(autoincrement())
   customerName  String   
   phoneNumber   String    
+
   userId        Int?
   user          User?      @relation(fields: [userId], references: [id])
-  
-  // ព័ត៌មានកម្មវិធី
-  programDate   DateTime
-  event_date    DateTime
+
+  eventDate     DateTime
   startDateTime DateTime?
   endDateTime   DateTime?
   
   location      String
   guestCount    Int
-  totalPrice    Decimal       @db.Decimal(10, 2)
+  totalPrice    Decimal     @db.Decimal(10, 2)
+
   status        String        @default("Pending")
 
-  catering_id   Int?
-  catering      Catering?     @relation(fields: [catering_id], references: [id])
+  productId     Int?
+  product       Product?    @relation(fields: [productId], references: [id])
+
+  categoryId    Int?
+  category      Category?   @relation(fields: [categoryId], references: [id])
+
   bookingItems  BookingItem[]
   
-  createdAt     DateTime      @default(now())
+  createdAt     DateTime    @default(now())
+
+  @@index([userId])
+  @@index([productId])
+  @@index([categoryId])
 }
 
 model BookingItem {
-  id              Int         @id @default(autoincrement())
-  booking_id      Int
-  booking         Booking     @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  menu_pricing_id Int
-  menuPricing     MenuPricing @relation(fields: [menu_pricing_id], references: [id])
-  quantity        Int         @default(1)
-  price           Decimal     @db.Decimal(10, 2)
+  id          Int       @id @default(autoincrement())
+
+  bookingId   Int
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  productId   Int?
+  product     Product?  @relation(fields: [productId], references: [id])
+
+  categoryId  Int?
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  quantity    Int       @default(1)
+  price       Decimal   @db.Decimal(10, 2)
+
+  @@index([bookingId])
+  @@index([productId])
+  @@index([categoryId])
 }
+
