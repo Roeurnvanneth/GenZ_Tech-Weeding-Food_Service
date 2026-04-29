@@ -1,29 +1,20 @@
-import Sidebar from "../../components/dashboard/Sidebar";
+// import "./globals.css";
+import { CartProvider } from "../context/CartContext"; // Adjust path if needed
 
-export default function DashboardLayout({
+
+export default async function LocaleLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
+
+  // No <html> or <body> here!
   return (
-    // Added text-slate-900 to ensure text is visible against bg-slate-50
-    <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans">
-      
-      {/* 1. Sidebar (Stays on the left) */}
-      <Sidebar />
-
-      <div className="flex flex-1 flex-col h-screen overflow-hidden">
-        {/* 2. Navbar (Stays at the top) */}
-        {/* <Navbar /> */}
-
-        {/* 3. Main Content (Scrollable) */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          {/* This is where your Products, Bookings, etc. will show up */}
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
+    <CartProvider>
+      <main>{children}</main>
+    </CartProvider>
   );
 }

@@ -1,67 +1,60 @@
 import { NextResponse } from 'next/server';
 import twilio from 'twilio';
-import { prisma } from "@/lib/prisma"; // ត្រូវប្រាកដថាអ្នកមាន Prisma setup
+import { prisma } from "@/lib/prisma";
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const client = twilio(accountSid, authToken);
+const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 export async function POST(request: Request) {
   try {
-    const { phone } = await request.json();
+    const { phone, name } = await request.json();
 
     if (!phone) {
-      return NextResponse.json({ success: false, message: "សូមបញ្ចូលលេខទូរស័ព្ទ" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "សូមបញ្ចូលលេខទូរស័ព្ទ" }, { status: 400 });
     }
 
-    // ១. ស្វែងរក User ក្នុង Database ដើម្បីយក Role
-    const user = await prisma.user.findUnique({
-      where: { phone: phone }
+    // 1. Generate 6-digit OTP and Expiry (5 minutes)
+    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date(Date.now() + 5 * 60 * 1000); 
+
+    // 2. Upsert User (Create if new, Update if exists)
+    // This matches your Schema with Int ID and Role enum
+    const user = await prisma.user.upsert({
+      where: { phone: phone },
+      update: { 
+        otpCode: generatedOtp,
+        otpExpiry: expiry 
+      },
+      create: {
+        phone: phone,
+        name: name || "New User",
+        otpCode: generatedOtp,
+        otpExpiry: expiry,
+        role: phone === "012345678" ? "ADMIN" : "USER", // Optional: Set admin by phone
+      },
     });
 
-    if (!user) {
-      return NextResponse.json({ success: false, message: "រកមិនឃើញអ្នកប្រើប្រាស់នេះទេ" }, { status: 404 });
-    }
-
-    // ២. បង្កើតលេខ OTP
-    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // ៣. ផ្ញើ SMS (Twilio)
+    // 3. Send SMS (Twilio)
     try {
-      if (process.env.TWILIO_PHONE_NUMBER && accountSid && authToken) {
+      if (process.env.TWILIO_PHONE_NUMBER && process.env.TWILIO_ACCOUNT_SID) {
         await client.messages.create({
-          body: `Your OTP is: ${generatedOtp}`,
+          body: `លេខកូដ OTP របស់អ្នកគឺ: ${generatedOtp}`,
           from: process.env.TWILIO_PHONE_NUMBER,
           to: phone,
         });
       }
     } catch (smsError) {
-      console.log("SMS Send failed (Twilio not configured), but continuing for testing...");
+      console.log("Twilio not configured, but proceeding for development...");
     }
 
-    // ៤. បង្កើត Response និង Set Cookies
-    const response = NextResponse.json({
+    // 4. Return success to the frontend
+    return NextResponse.json({
       success: true,
-      message: "OTP generated!",
-      debugOtp: generatedOtp 
+      message: "OTP generated successfully",
+      debugOtp: generatedOtp // This is what your frontend uses for redirect
     });
 
-    // បោះ Token សន្មត (ប្តូរចេញពេលអ្នកធ្វើប្រព័ន្ធ Login ចប់សព្វគ្រប់)
-    response.cookies.set("token", "test_session_token", {
-      httpOnly: true,
-      path: "/",
-    });
-
-    // បោះ Role ទៅឱ្យ Middleware ឆែក
-    response.cookies.set("user_role", user.role, {
-      path: "/",
-      maxAge: 60 * 60 * 24, // ១ ថ្ងៃ
-    });
-
-    return response;
-
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("DATABASE_ERROR:", error);
+    return NextResponse.json({ success: false, error: "មានបញ្ហាម៉ាស៊ីនបម្រើ" }, { status: 500 });
   }
 }

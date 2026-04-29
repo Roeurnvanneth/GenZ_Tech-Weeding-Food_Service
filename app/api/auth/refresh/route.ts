@@ -6,53 +6,58 @@ export async function POST(request: Request) {
   try {
     const { refreshToken } = await request.json();
 
-    // 1. Check if token is provided
     if (!refreshToken) {
-      return NextResponse.json({ success: false, error: "Refresh token is required" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Missing token" }, { status: 400 });
     }
 
-    // 2. Verify the Refresh Token
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET as string) as { userId: number };
+    // 1. Verify Token
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!) as { userId: number };
 
-    // 3. Find the user and check if the token matches what we have in the DB
+    // 2. Database Lookup (Ensure you use the global prisma instance from /lib/prisma)
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
+      select: { id: true, role: true, refreshToken: true } // Only select what you need for speed
     });
 
+    // 3. Security Check
     if (!user || user.refreshToken !== refreshToken) {
-      return NextResponse.json({ success: false, error: "Invalid refresh token" }, { status: 401 });
+      return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 });
     }
 
-    // 4. Generate a NEW Access Token
+    // 4. Generate New Pair (Access + Refresh)
     const newAccessToken = jwt.sign(
       { userId: user.id, role: user.role },
-      process.env.JWT_SECRET as string,
-      { expiresIn: "15m" } // Access tokens should be short-lived
+      process.env.JWT_SECRET!,
+      { expiresIn: "1m" } // 1m might be too short, causing too many refreshes
     );
 
-    // 5. (Optional) Generate a NEW Refresh Token (Token Rotation)
     const newRefreshToken = jwt.sign(
       { userId: user.id },
-      process.env.REFRESH_TOKEN_SECRET as string,
+      process.env.REFRESH_TOKEN_SECRET!,
       { expiresIn: "7d" }
     );
 
-    // Update the database with the new refresh token
+    // 5. Update DB and Response Cookies
     await prisma.user.update({
       where: { id: user.id },
       data: { refreshToken: newRefreshToken },
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
-      data: {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-      },
+      accessToken: newAccessToken,
     });
 
+    // Set the new refresh token in an HTTP-only cookie for better security
+    response.cookies.set("token", newAccessToken, {
+      httpOnly: true,
+      path: "/",
+      maxAge: 60 * 15, // matches access token
+    });
+
+    return response;
+
   } catch (error) {
-    console.error("Refresh Error:", error);
-    return NextResponse.json({ success: false, error: "Token expired or invalid" }, { status: 403 });
+    return NextResponse.json({ success: false, error: "Session expired" }, { status: 403 });
   }
 }

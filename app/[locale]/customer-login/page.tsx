@@ -43,7 +43,7 @@ export default function LoginPage() {
         const otpCode = result.debugOtp ? `&code=${result.debugOtp}` : "";
 
         /* សំខាន់៖ យើងបញ្ជូន name ទៅជាមួយ URL ដើម្បីឱ្យទំព័រ Verify 
-           អាចយកឈ្មោះនោះទៅរក្សាទុកក្នុង localStorage ពេល Login ជោគជ័យ
+          អាចយកឈ្មោះនោះទៅរក្សាទុកក្នុង localStorage ពេល Login ជោគជ័យ
         */
         router.push(
           `/${locale}/customer-verify-otp?phone=${encodeURIComponent(data.phone)}&name=${encodeURIComponent(data.name)}${otpCode}`,
